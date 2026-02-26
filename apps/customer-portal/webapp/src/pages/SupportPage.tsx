@@ -34,9 +34,9 @@ import { useLogger } from "@hooks/useLogger";
 import {
   SUPPORT_OVERVIEW_CASES_LIMIT,
   SUPPORT_OVERVIEW_CHAT_LIMIT,
+  CaseType,
 } from "@constants/supportConstants";
 import {
-  getIncidentAndQueryCaseTypeIds,
   getIncidentAndQueryIds,
 } from "@utils/support";
 import { formatDateTime } from "@utils/support";
@@ -52,13 +52,8 @@ export default function SupportPage(): JSX.Element {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
 
-  const {
-    data: filterMetadata,
-    isFetching: isFiltersFetching,
-    isError: isFiltersError,
-  } = useGetCasesFilters(projectId || "");
+  const { data: filterMetadata } = useGetCasesFilters(projectId || "");
 
-  const caseTypeIds = getIncidentAndQueryCaseTypeIds(filterMetadata?.caseTypes);
   const { incidentId, queryId } = getIncidentAndQueryIds(
     filterMetadata?.caseTypes,
   );
@@ -86,14 +81,12 @@ export default function SupportPage(): JSX.Element {
     projectId || "",
     {
       filters: {
-        caseTypeIds: caseTypeIds.length > 0 ? caseTypeIds : undefined,
+        caseTypes: [CaseType.DEFAULT_CASE],
       },
       sortBy: { field: "createdOn", order: "desc" },
     },
     {
-      enabled:
-        !!projectId &&
-        (caseTypeIds.length > 0 || isFiltersFetching || !!isFiltersError),
+      enabled: !!projectId,
     },
   );
 
