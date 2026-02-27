@@ -14,18 +14,23 @@
 // under the License.
 
 import { useState, useCallback, type JSX } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { Box } from "@wso2/oxygen-ui";
 import { Siren, Package } from "@wso2/oxygen-ui-icons-react";
 //import SecurityStats from "@components/security/SecurityStats";
 import TabBar from "@components/common/tab-bar/TabBar";
 import ProductVulnerabilitiesTable from "@components/security/ProductVulnerabilitiesTable";
-import ComponentAnalysis from "@components/security/ComponentAnalysis";
+import SecurityReportAnalysis from "@/components/security/SecurityReportAnalysis";
 
 const SecurityPage = (): JSX.Element => {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
-  const [activeTab, setActiveTab] = useState("components");
+  const [searchParams] = useSearchParams();
+
+  const [activeTab, setActiveTab] = useState(() => {
+    const tabParam = searchParams.get("tab");
+    return tabParam === "vulnerabilities" ? "vulnerabilities" : "components";
+  });
 
   const handleVulnerabilityClick = useCallback(
     (vulnerability: { id: string }) => {
@@ -60,7 +65,7 @@ const SecurityPage = (): JSX.Element => {
               onVulnerabilityClick={handleVulnerabilityClick}
             />
           )}
-          {activeTab === "vulnerabilities" && <ComponentAnalysis />}
+          {activeTab === "vulnerabilities" && <SecurityReportAnalysis />}
         </Box>
       </Box>
     </Box>

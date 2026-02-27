@@ -29,6 +29,7 @@ import { usePostCaseClassifications } from "@api/usePostCaseClassifications";
 import { usePostConversations } from "@api/usePostConversations";
 import { usePostConversationMessages } from "@api/usePostConversationMessages";
 import type { ChatNavState } from "@models/chatNavState";
+import type { SlotState } from "@models/responses";
 import { useAllDeploymentProducts } from "@hooks/useAllDeploymentProducts";
 import {
   DEFAULT_CONVERSATION_REGION,
@@ -51,6 +52,7 @@ export interface Message {
   showCreateCaseAction?: boolean;
   isLoading?: boolean;
   isError?: boolean;
+  slotState?: SlotState;
 }
 
 /**
@@ -85,7 +87,8 @@ export default function NoveraChatPage(): JSX.Element {
   );
   const { mutateAsync: classifyCase } = usePostCaseClassifications();
   const { mutateAsync: postConversation } = usePostConversations();
-  const { mutateAsync: postConversationMessages } = usePostConversationMessages();
+  const { mutateAsync: postConversationMessages } =
+    usePostConversationMessages();
   const [conversationId, setConversationId] = useState<string | null>(
     () => conversationResponse?.conversationId ?? null,
   );
@@ -109,6 +112,7 @@ export default function NoveraChatPage(): JSX.Element {
           sender: "bot",
           timestamp: new Date(),
           showCreateCaseAction: conversationResponse.actions != null,
+          slotState: conversationResponse.slotState,
         },
       ];
       if (userMsg) {
@@ -205,6 +209,62 @@ export default function NoveraChatPage(): JSX.Element {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const handleSlotSelection = useCallback(
+    (messageId: string, slot: string, value: string) => {
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id === messageId && m.slotState) {
+            const updatedFilledSlots = {
+              ...(m.slotState.filledSlots || {}),
+              [slot]: value,
+            };
+            return {
+              ...m,
+              slotState: {
+                ...m.slotState,
+                filledSlots: updatedFilledSlots,
+              },
+            };
+          }
+          return m;
+        }),
+      );
+    },
+    [],
+  );
+
+  const filledSlotsForDisplay = useMemo(() => {
+    // Get the latest bot message with slotState
+    const latestBotWithSlots = [...messages]
+      .reverse()
+      .find(
+        (m) =>
+          m.sender === "bot" &&
+          m.slotState?.slotOptions &&
+          m.slotState.slotOptions.length > 0,
+      );
+
+    if (
+      !latestBotWithSlots?.slotState?.filledSlots ||
+      !latestBotWithSlots.slotState.slotOptions
+    ) {
+      return [];
+    }
+
+    // Map filled slots to label-value pairs
+    return latestBotWithSlots.slotState.slotOptions
+      .map((option) => {
+        const value = latestBotWithSlots.slotState?.filledSlots?.[option.slot];
+        if (value) {
+          return { label: option.label, value };
+        }
+        return null;
+      })
+      .filter(
+        (item): item is { label: string; value: string } => item !== null,
+      );
+  }, [messages]);
+
   const sendToApi = useCallback(
     async (userText: string) => {
       if (!projectId) return null;
@@ -271,6 +331,7 @@ export default function NoveraChatPage(): JSX.Element {
                 isLoading: false,
                 isError: false,
                 showCreateCaseAction: response?.actions != null,
+                slotState: response?.slotState,
               }
             : m,
         ),
@@ -292,6 +353,38 @@ export default function NoveraChatPage(): JSX.Element {
       setIsSending(false);
     }
   }, [isSending, projectId, sendToApi, setInputValueAndRef]);
+
+  const handleChooseSlots = useCallback(
+    (messageId: string) => {
+      const message = messages.find((m) => m.id === messageId);
+      if (!message?.slotState?.filledSlots || !message.slotState.slotOptions) {
+        return;
+      }
+
+      // Format the message as "Environment is {value} and Product is {value}"
+      const parts = message.slotState.slotOptions
+        .map((option) => {
+          const value = message.slotState?.filledSlots?.[option.slot];
+          if (value) {
+            return `${option.label} is ${value}`;
+          }
+          return null;
+        })
+        .filter((part): part is string => part !== null);
+
+      const formattedMessage = parts.join(" and ");
+
+      // Set the formatted message as plain text and trigger send
+      inputValueRef.current = formattedMessage;
+      setInputValue(formattedMessage);
+
+      // Trigger send after a brief delay to ensure state updates
+      setTimeout(() => {
+        handleSendMessage();
+      }, 100);
+    },
+    [messages, handleSendMessage],
+  );
 
   return (
     <Box
@@ -325,6 +418,8 @@ export default function NoveraChatPage(): JSX.Element {
             messagesEndRef={messagesEndRef}
             onCreateCase={handleCreateCase}
             isCreateCaseLoading={isCreateCaseLoading}
+            onSlotSelection={handleSlotSelection}
+            onChooseSlots={handleChooseSlots}
           />
 
           <Divider />
@@ -335,6 +430,7 @@ export default function NoveraChatPage(): JSX.Element {
             setInputValue={setInputValueAndRef}
             isSending={isSending}
             resetTrigger={resetTrigger}
+            filledSlots={filledSlotsForDisplay}
           />
         </Paper>
       </Box>

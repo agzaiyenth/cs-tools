@@ -71,7 +71,14 @@ export default function CaseDetailsPage(): JSX.Element {
   }, [isError, showError]);
 
   const handleBack = () => {
-    navigate(`/${projectId}/support/cases`);
+    const isSecurityReport = data?.type?.label
+      ?.toLowerCase()
+      ?.includes("security");
+    if (isSecurityReport) {
+      navigate(`/${projectId}/security-center?tab=vulnerabilities`);
+    } else {
+      navigate(`/${projectId}/support/cases`);
+    }
   };
 
   const handleOpenRelatedCase = () => {
