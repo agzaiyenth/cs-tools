@@ -269,7 +269,7 @@ export default function AllCasesPage(): JSX.Element {
       {/* Cases list */}
       <AllCasesList
         cases={paginatedCases}
-        isLoading={isCasesAreaLoading}
+        isLoading={isCasesAreaLoading && !isCasesError}
         isError={isCasesError}
         onCaseClick={(c) => navigate(`/${projectId}/support/cases/${c.id}`)}
       />

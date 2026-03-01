@@ -64,10 +64,10 @@ export default function Header({ onToggleSidebar }: HeaderProps): JSX.Element {
 
   // Auto-fetch all pages on mount to populate dropdown
   useEffect(() => {
-    if (hasNextPage && !isFetchingNextPage && !isLoading) {
+    if (hasNextPage && !isFetchingNextPage && !isLoading && !isError) {
       fetchNextPage();
     }
-  }, [hasNextPage, isFetchingNextPage, isLoading, fetchNextPage]);
+  }, [hasNextPage, isFetchingNextPage, isLoading, isError, fetchNextPage]);
 
   const projectFromUrl = projects.find((project) => project.id === projectId);
 

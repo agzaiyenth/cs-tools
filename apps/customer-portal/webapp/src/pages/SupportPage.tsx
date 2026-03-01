@@ -35,9 +35,7 @@ import {
   SUPPORT_OVERVIEW_CHAT_LIMIT,
   CaseType,
 } from "@constants/supportConstants";
-import {
-  getIncidentAndQueryIds,
-} from "@utils/support";
+import { getIncidentAndQueryIds } from "@utils/support";
 import type { ChatHistoryItem } from "@models/responses";
 
 /**

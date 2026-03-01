@@ -52,7 +52,7 @@ export default function useInfiniteProjects({
   const fetchFn = useAuthApiClient();
 
   return useInfiniteQuery<SearchProjectsResponse, Error>({
-    queryKey: [ApiQueryKeys.PROJECTS, "infinite", searchQuery],
+    queryKey: [ApiQueryKeys.PROJECTS, "infinite", searchQuery, pageSize],
     queryFn: async ({ pageParam = 0 }): Promise<SearchProjectsResponse> => {
       logger.debug(
         `[useInfiniteProjects] Fetching projects... offset: ${pageParam}, limit: ${pageSize}, searchQuery: ${searchQuery || "none"}`,
@@ -96,6 +96,10 @@ export default function useInfiniteProjects({
       }
     },
     getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.projects.length === 0) {
+        return undefined;
+      }
+
       const totalFetched = allPages.reduce(
         (sum, page) => sum + page.projects.length,
         0,

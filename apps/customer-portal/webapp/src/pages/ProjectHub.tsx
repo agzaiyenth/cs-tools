@@ -57,7 +57,7 @@ export default function ProjectHub(): JSX.Element {
     isFetchingNextPage,
   } = useInfiniteProjects({
     searchQuery: debouncedSearchQuery || undefined,
-    pageSize: 2,
+    pageSize: 20,
   });
 
   const projects = useMemo(() => flattenProjectPages(data), [data]);
@@ -65,10 +65,21 @@ export default function ProjectHub(): JSX.Element {
 
   // Auto-fetch all pages when searching to show all results
   useEffect(() => {
-    if (searchQuery && hasNextPage && !isFetchingNextPage && !isLoading) {
+    if (
+      debouncedSearchQuery &&
+      hasNextPage &&
+      !isFetchingNextPage &&
+      !isLoading
+    ) {
       fetchNextPage();
     }
-  }, [searchQuery, hasNextPage, isFetchingNextPage, isLoading, fetchNextPage]);
+  }, [
+    debouncedSearchQuery,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    fetchNextPage,
+  ]);
 
   useEffect(() => {
     if (isLoading || isAuthLoading) {
@@ -274,7 +285,7 @@ export default function ProjectHub(): JSX.Element {
           flexDirection: "column",
           flex: 1,
           justifyContent: shouldCenterContent ? "center" : "flex-start",
-          pt: showOnlySearchBar ? 0 : 0,
+          pt: 0,
         }}
       >
         {!(

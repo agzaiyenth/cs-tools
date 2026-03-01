@@ -85,107 +85,89 @@ export default function AnnouncementList({
             <Form.CardHeader
               sx={{ p: 0 }}
               title={
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    fontWeight={500}
+                    color="text.primary"
+                  >
+                    {caseItem.number || "--"}
+                  </Typography>
+                  {statusLabel && (
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      label={statusLabel}
+                      icon={statusChipIcon as ReactElement}
+                      sx={{
+                        bgcolor: alpha(resolvedStatusColor, 0.1),
+                        color: resolvedStatusColor,
+                        height: 20,
+                        fontSize: "0.75rem",
+                        px: 0,
+                        "& .MuiChip-icon": {
+                          color: "inherit",
+                          ml: "6px",
+                          mr: "6px",
+                        },
+                        "& .MuiChip-label": {
+                          pl: 0,
+                          pr: "6px",
+                        },
+                      }}
+                    />
+                  )}
+                </Box>
+              }
+            />
+
+            <Form.CardContent sx={{ p: 0 }}>
+              <Typography
+                variant="h6"
+                color="text.primary"
+                sx={{ mb: 1, fontWeight: 500 }}
+              >
+                {caseItem.title || "--"}
+              </Typography>
+
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  mb: 2,
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                }}
+              >
+                {stripHtml(caseItem.description) || "--"}
+              </Typography>
+            </Form.CardContent>
+
+            <Form.CardActions
+              sx={{
+                p: 0,
+                justifyContent: "flex-start",
+                flexWrap: "wrap",
+                gap: 2,
+              }}
+            >
               <Box
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 1,
+                  gap: 2,
                   flexWrap: "wrap",
                 }}
               >
-                <Typography
-                  variant="body2"
-                  fontWeight={500}
-                  color="text.primary"
-                >
-                  {caseItem.number || "--"}
-                </Typography>
-                {statusLabel && (
-                  <Chip
-                    size="small"
-                    variant="outlined"
-                    label={statusLabel}
-                    icon={statusChipIcon as ReactElement}
-                    sx={{
-                      bgcolor: alpha(resolvedStatusColor, 0.1),
-                      color: resolvedStatusColor,
-                      height: 20,
-                      fontSize: "0.75rem",
-                      px: 0,
-                      "& .MuiChip-icon": {
-                        color: "inherit",
-                        ml: "6px",
-                        mr: "6px",
-                      },
-                      "& .MuiChip-label": {
-                        pl: 0,
-                        pr: "6px",
-                      },
-                    }}
-                  />
-                )}
-              </Box>
-            }
-          />
-
-          <Form.CardContent sx={{ p: 0 }}>
-            <Typography
-              variant="h6"
-              color="text.primary"
-              sx={{ mb: 1, fontWeight: 500 }}
-            >
-              {caseItem.title || "--"}
-            </Typography>
-
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{
-                mb: 2,
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-              }}
-            >
-              {stripHtml(caseItem.description) || "--"}
-            </Typography>
-          </Form.CardContent>
-
-          <Form.CardActions
-            sx={{
-              p: 0,
-              justifyContent: "flex-start",
-              flexWrap: "wrap",
-              gap: 2,
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                flexWrap: "wrap",
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 0.5,
-                  flexShrink: 0,
-                }}
-              >
-                <Calendar size={14} />
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ lineHeight: 1 }}
-                >
-                  Created {formatUtcToLocalNoTimezone(caseItem.createdOn)}
-                </Typography>
-              </Box>
-              {caseItem.issueType?.label && (
                 <Box
                   sx={{
                     display: "flex",
@@ -194,18 +176,36 @@ export default function AnnouncementList({
                     flexShrink: 0,
                   }}
                 >
-                  <FileText size={14} />
+                  <Calendar size={14} />
                   <Typography
                     variant="caption"
                     color="text.secondary"
                     sx={{ lineHeight: 1 }}
                   >
-                    {caseItem.issueType.label}
+                    Created {formatUtcToLocalNoTimezone(caseItem.createdOn)}
                   </Typography>
                 </Box>
-              )}
-            </Box>
-          </Form.CardActions>
+                {caseItem.issueType?.label && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.5,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <FileText size={14} />
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ lineHeight: 1 }}
+                    >
+                      {caseItem.issueType.label}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </Form.CardActions>
           </>
         );
         return onCaseClick ? (

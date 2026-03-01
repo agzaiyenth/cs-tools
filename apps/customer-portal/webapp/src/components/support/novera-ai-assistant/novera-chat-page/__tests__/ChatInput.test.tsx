@@ -59,12 +59,7 @@ vi.mock("@wso2/oxygen-ui", async () => {
 
 // Mock Editor as a simple input for testing
 vi.mock("@components/common/rich-text-editor/Editor", () => ({
-  default: ({
-    value,
-    onChange,
-    placeholder,
-    onSubmitKeyDown,
-  }: any) => (
+  default: ({ value, onChange, placeholder, onSubmitKeyDown }: any) => (
     <div data-testid="chat-editor">
       <span data-testid="editor-placeholder">{placeholder}</span>
       <input
@@ -98,9 +93,9 @@ describe("ChatInput", () => {
       />,
     );
 
-    expect(
-      screen.getByTestId("editor-placeholder"),
-    ).toHaveTextContent(/Type your message/);
+    expect(screen.getByTestId("editor-placeholder")).toHaveTextContent(
+      /Type your message/,
+    );
     expect(screen.getByTestId("icon-send")).toBeInTheDocument();
   });
 

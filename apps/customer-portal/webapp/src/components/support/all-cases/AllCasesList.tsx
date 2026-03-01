@@ -234,8 +234,9 @@ export default function AllCasesList({
                   </Typography>
                 </Box>
                 {(() => {
-                  const assignedLabel =
-                    getAssignedEngineerLabel(caseItem.assignedEngineer);
+                  const assignedLabel = getAssignedEngineerLabel(
+                    caseItem.assignedEngineer,
+                  );
                   return assignedLabel ? (
                     <Box
                       sx={{

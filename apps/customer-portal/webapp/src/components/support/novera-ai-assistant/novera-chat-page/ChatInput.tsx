@@ -65,7 +65,9 @@ export default function ChatInput({
               transition: "top 0.2s ease",
             }}
           >
-            <Tooltip title={showToolbar ? "Hide formatting" : "Show formatting"}>
+            <Tooltip
+              title={showToolbar ? "Hide formatting" : "Show formatting"}
+            >
               <IconButton
                 onClick={() => setShowToolbar(!showToolbar)}
                 color="default"

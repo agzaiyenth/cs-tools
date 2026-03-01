@@ -93,10 +93,9 @@ export default function AllConversationsList({
         const StatusIcon = getStatusIcon(conv.state?.label);
         const colorPath = getStatusColor(conv.state?.label);
         const resolvedColor = resolveColorFromTheme(colorPath, theme);
-        const action =
-          (conv.state?.label?.toLowerCase().includes("open")
-            ? "resume"
-            : "view") as "resume" | "view";
+        const action = (
+          conv.state?.label?.toLowerCase().includes("open") ? "resume" : "view"
+        ) as "resume" | "view";
 
         return (
           <Form.CardButton
