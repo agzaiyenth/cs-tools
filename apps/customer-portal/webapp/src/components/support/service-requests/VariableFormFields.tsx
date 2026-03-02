@@ -15,8 +15,10 @@
 
 import {
   Box,
+  Button,
   FormControl,
-  InputLabel,
+  Grid,
+  IconButton,
   MenuItem,
   Paper,
   Select,
@@ -24,14 +26,30 @@ import {
   TextField,
   Typography,
 } from "@wso2/oxygen-ui";
-import type { JSX } from "react";
+import { Upload, X } from "@wso2/oxygen-ui-icons-react";
+import { useEffect, type JSX } from "react";
 import type { CatalogItemVariable } from "@models/responses";
+import Editor from "@components/common/rich-text-editor/Editor";
 
 export interface VariableFormFieldsProps {
   variables: CatalogItemVariable[] | undefined;
   isLoading: boolean;
   values: Record<string, string>;
   onChange: (variableId: string, value: string) => void;
+  /** Selected service request type label (e.g. "Configuration Changes"). */
+  selectedRequestTypeLabel?: string;
+  /** Auto-populated context: Project, Deployment, Product (from form above). */
+  contextValues?: {
+    projectDisplay: string;
+    deploymentDisplay: string;
+    productDisplay: string;
+  };
+  /** Attachments for case creation (files selected by user). */
+  attachments?: Array<{ id: string; file: File }>;
+  onAttachmentClick?: () => void;
+  onAttachmentRemove?: (index: number) => void;
+  /** When user selects file(s) via attachment variable's file input. */
+  onAttachmentAdd?: (file: File, variableLabel?: string) => void;
 }
 
 const VARIABLE_TYPE_SINGLE_LINE = "Single Line Text";
@@ -40,10 +58,142 @@ const VARIABLE_TYPE_SELECT = "Select Box";
 const VARIABLE_TYPE_CHECKBOX = "Checkbox";
 const VARIABLE_TYPE_RADIO = "Radio Buttons";
 
+/** Description fields use the Rich Text Editor (RTE) per decommissioned portal. */
+function isDescriptionField(questionText: string): boolean {
+  const normalized = (questionText ?? "")
+    .replace(/^\s*\*?\s*/, "")
+    .trim()
+    .toLowerCase();
+  return normalized === "description";
+}
+
+/** Attachment/File type variants from API (case-insensitive). */
+function isAttachmentType(type: string): boolean {
+  const t = (type ?? "").trim().toLowerCase();
+  return (
+    t === "attachment" ||
+    t === "file" ||
+    t === "file upload" ||
+    t.includes("attachment") ||
+    t.includes("file upload") ||
+    (t.includes("file") && !t.includes("configuration")) ||
+    t.includes("attach")
+  );
+}
+
+/** Required if questionText starts with asterisk. Returns [displayLabel, isRequired]. */
+function parseRequiredLabel(questionText: string): {
+  label: string;
+  isRequired: boolean;
+} {
+  const raw = (questionText ?? "").trim();
+  const isRequired = /^\s*\*/.test(raw);
+  const label = raw.replace(/^\s*\*?\s*/, "").trim() || raw;
+  return { label, isRequired };
+}
+
+const CONTEXT_FIELD_PATTERNS: Array<{
+  pattern: RegExp;
+  getValue: (ctx: {
+    projectDisplay: string;
+    deploymentDisplay: string;
+    productDisplay: string;
+  }) => string;
+}> = [
+  { pattern: /^project$/i, getValue: (c) => c.projectDisplay },
+  { pattern: /^deployments?$/i, getValue: (c) => c.deploymentDisplay },
+  { pattern: /^product$/i, getValue: (c) => c.productDisplay },
+  { pattern: /^wso2\s*product$/i, getValue: (c) => c.productDisplay },
+  { pattern: /^environment$/i, getValue: (c) => c.deploymentDisplay },
+];
+
+/** Fields hidden from customers but still sent in the payload (internal/system use). */
+const HIDDEN_FIELD_PATTERNS: RegExp[] = [
+  /^case\s*type$/i,
+  /^service\s*request\s*category$/i,
+  /^classification$/i,
+  /^class\s*fication$/i,
+  /^srns$/i,
+  /^state$/i,
+  /^assignment\s*group$/i,
+  /^assigned\s*to$/i,
+  /^priority$/i,
+  /^impact$/i,
+];
+
+function isContextField(
+  questionText: string,
+  contextValues?: VariableFormFieldsProps["contextValues"],
+): boolean {
+  if (!contextValues) return false;
+  const normalized = questionText?.trim().toLowerCase() ?? "";
+  return CONTEXT_FIELD_PATTERNS.some(({ pattern }) => pattern.test(normalized));
+}
+
+function getContextValue(
+  questionText: string,
+  contextValues: {
+    projectDisplay: string;
+    deploymentDisplay: string;
+    productDisplay: string;
+  },
+): string {
+  const normalized = questionText?.trim().toLowerCase() ?? "";
+  const match = CONTEXT_FIELD_PATTERNS.find(({ pattern }) =>
+    pattern.test(normalized),
+  );
+  return match?.getValue(contextValues) ?? "";
+}
+
+function isHiddenField(questionText: string): boolean {
+  const normalized = questionText?.trim().toLowerCase() ?? "";
+  return HIDDEN_FIELD_PATTERNS.some((p) => p.test(normalized));
+}
+
+
+/** Label with optional red asterisk for required fields. */
+function FieldLabel({
+  questionText,
+  isRequired,
+}: {
+  questionText: string;
+  isRequired: boolean;
+}): JSX.Element {
+  const { label } = parseRequiredLabel(questionText);
+  return (
+    <Typography variant="caption" component="span" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+      {label}
+      {isRequired && (
+        <Box
+          component="span"
+          sx={{ color: "#d32f2f", fontWeight: 600, marginLeft: "2px" }}
+          aria-hidden
+        >
+          *
+        </Box>
+      )}
+    </Typography>
+  );
+}
+
+/** Deduplicate variables by questionText - keep first occurrence. */
+function deduplicateVariables(
+  variables: CatalogItemVariable[],
+): CatalogItemVariable[] {
+  const seen = new Set<string>();
+  return variables.filter((v) => {
+    const key = (v.questionText ?? "").trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 /**
  * Renders dynamic form fields based on catalog item variable types.
+ * Adopts Create Case styling: Paper, Grid, outlined TextFields.
  *
- * @param {VariableFormFieldsProps} props - Variables schema and current values.
+ * @param {VariableFormFieldsProps} props - Variables schema, values, and context.
  * @returns {JSX.Element} The variable form fields.
  */
 export default function VariableFormFields({
@@ -51,7 +201,40 @@ export default function VariableFormFields({
   isLoading,
   values,
   onChange,
+  selectedRequestTypeLabel,
+  contextValues,
+  attachments = [],
+  onAttachmentClick,
+  onAttachmentRemove,
+  onAttachmentAdd,
 }: VariableFormFieldsProps): JSX.Element {
+  const sortedVariables = variables
+    ? [...variables].sort((a, b) => a.order - b.order)
+    : [];
+  const deduplicatedForDisplay = deduplicateVariables(sortedVariables);
+
+  const allContextFields = contextValues
+    ? sortedVariables.filter((v) =>
+        isContextField(v.questionText, contextValues),
+      )
+    : [];
+  const contextFieldsForDisplay = deduplicateVariables(allContextFields);
+  const userFields = deduplicatedForDisplay.filter(
+    (v) =>
+      !isContextField(v.questionText, contextValues) &&
+      !isHiddenField(v.questionText ?? ""),
+  );
+
+  useEffect(() => {
+    if (!contextValues || !allContextFields.length) return;
+    allContextFields.forEach((v) => {
+      const val = getContextValue(v.questionText, contextValues);
+      if (val && (values[v.id] ?? "") !== val) {
+        onChange(v.id, val);
+      }
+    });
+  }, [contextValues, allContextFields, onChange]);
+
   if (isLoading) {
     return (
       <Paper variant="outlined" sx={{ p: 3, borderRadius: 0 }}>
@@ -59,15 +242,15 @@ export default function VariableFormFields({
           Request Details
         </Typography>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <Skeleton variant="rounded" height={56} />
-          <Skeleton variant="rounded" height={56} />
-          <Skeleton variant="rounded" height={80} />
+          <Skeleton variant="rounded" height={56} sx={{ borderRadius: 0 }} />
+          <Skeleton variant="rounded" height={56} sx={{ borderRadius: 0 }} />
+          <Skeleton variant="rounded" height={80} sx={{ borderRadius: 0 }} />
         </Box>
       </Paper>
     );
   }
 
-  if (!variables?.length) {
+  if (!sortedVariables.length) {
     return (
       <Paper variant="outlined" sx={{ p: 3, borderRadius: 0 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>
@@ -80,75 +263,260 @@ export default function VariableFormFields({
     );
   }
 
-  const sortedVariables = [...variables].sort((a, b) => a.order - b.order);
+  const renderField = (variable: CatalogItemVariable) => {
+    const value = values[variable.id] ?? "";
+    const type = (variable.type ?? VARIABLE_TYPE_SINGLE_LINE).trim();
+    const isContext = contextValues
+      ? isContextField(variable.questionText, contextValues)
+      : false;
+    const displayValue = isContext
+      ? getContextValue(variable.questionText!, contextValues!)
+      : value;
+
+    if (
+      type === VARIABLE_TYPE_SELECT ||
+      type === VARIABLE_TYPE_RADIO ||
+      type === VARIABLE_TYPE_CHECKBOX
+    ) {
+      return (
+        <Grid key={variable.id} size={{ xs: 12 }}>
+          <Box sx={{ mb: 1 }}>
+            <FieldLabel
+              questionText={variable.questionText ?? ""}
+              isRequired={parseRequiredLabel(variable.questionText ?? "").isRequired}
+            />
+          </Box>
+          <FormControl fullWidth size="small">
+            <Select
+              value={value}
+              onChange={(e) =>
+                onChange(variable.id, e.target.value as string)
+              }
+              displayEmpty
+              disabled={isContext}
+              renderValue={(v) => v || "Select..."}
+              sx={{ borderRadius: 0 }}
+            >
+              <MenuItem value="">
+                <em>Select...</em>
+              </MenuItem>
+              <MenuItem value="Yes">Yes</MenuItem>
+              <MenuItem value="No">No</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+      );
+    }
+
+    if (isDescriptionField(variable.questionText ?? "")) {
+      return (
+        <Grid key={variable.id} size={{ xs: 12 }}>
+          <Box sx={{ mb: 1 }}>
+            <FieldLabel
+              questionText={variable.questionText}
+              isRequired={parseRequiredLabel(variable.questionText ?? "").isRequired}
+            />
+          </Box>
+          <Editor
+            value={value}
+            onChange={(html) => onChange(variable.id, html)}
+            disabled={isContext}
+            placeholder=""
+            minHeight={150}
+            maxHeight="300px"
+            showToolbar
+            toolbarVariant="full"
+            onAttachmentClick={onAttachmentClick}
+            attachments={attachments.map((a) => a.file)}
+            onAttachmentRemove={onAttachmentRemove}
+          />
+        </Grid>
+      );
+    }
+
+    if (
+      (type === VARIABLE_TYPE_MULTI_LINE ||
+        (variable.type ?? "").toLowerCase().includes("multi")) &&
+      !isDescriptionField(variable.questionText ?? "")
+    ) {
+      return (
+        <Grid key={variable.id} size={{ xs: 12 }}>
+          <Box sx={{ mb: 1 }}>
+            <FieldLabel
+              questionText={variable.questionText}
+              isRequired={parseRequiredLabel(variable.questionText ?? "").isRequired}
+            />
+          </Box>
+          <TextField
+            fullWidth
+            multiline
+            size="small"
+            rows={4}
+            value={displayValue}
+            onChange={(e) => onChange(variable.id, e.target.value)}
+            disabled={isContext}
+            sx={{
+              "& .MuiOutlinedInput-root": { borderRadius: 0 },
+            }}
+          />
+        </Grid>
+      );
+    }
+
+    if (isAttachmentType(type)) {
+      return (
+        <Grid key={variable.id} size={{ xs: 12 }}>
+          <Box sx={{ mb: 1 }}>
+            <FieldLabel
+              questionText={variable.questionText ?? ""}
+              isRequired={parseRequiredLabel(variable.questionText ?? "").isRequired}
+            />
+          </Box>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            {onAttachmentAdd ? (
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Upload size={16} />}
+                component="label"
+                sx={{ borderRadius: 0, alignSelf: "flex-start" }}
+              >
+                <input
+                  type="file"
+                  hidden
+                  multiple
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (files?.length) {
+                      for (let i = 0; i < files.length; i++) {
+                        const f = files[i];
+                        if (f) onAttachmentAdd(f, variable.questionText ?? undefined);
+                      }
+                      e.target.value = "";
+                    }
+                  }}
+                />
+                Choose file(s)
+              </Button>
+            ) : (
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Upload size={16} />}
+                onClick={onAttachmentClick}
+                sx={{ borderRadius: 0, alignSelf: "flex-start" }}
+              >
+                Add attachment
+              </Button>
+            )}
+            {attachments.length > 0 && (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: 1 }}>
+                {attachments.map((item, idx) => (
+                  <Box
+                    key={item.id}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      py: 0.5,
+                      px: 1,
+                      bgcolor: "action.hover",
+                      borderRadius: 0,
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ flex: 1 }} noWrap>
+                      {item.file.name}
+                    </Typography>
+                    {onAttachmentRemove && (
+                      <IconButton
+                        size="small"
+                        onClick={() => onAttachmentRemove(idx)}
+                        aria-label={`Remove ${item.file.name}`}
+                        sx={{ borderRadius: 0 }}
+                      >
+                        <X size={14} />
+                      </IconButton>
+                    )}
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Box>
+        </Grid>
+      );
+    }
+
+    return (
+      <Grid key={variable.id} size={{ xs: 12 }}>
+        <Box sx={{ mb: 1 }}>
+          <FieldLabel
+            questionText={variable.questionText ?? ""}
+            isRequired={parseRequiredLabel(variable.questionText ?? "").isRequired}
+          />
+        </Box>
+        <TextField
+          fullWidth
+          size="small"
+          value={displayValue}
+          onChange={(e) => onChange(variable.id, e.target.value)}
+          disabled={isContext}
+          sx={{
+            "& .MuiOutlinedInput-root": { borderRadius: 0 },
+          }}
+        />
+      </Grid>
+    );
+  };
 
   return (
     <Paper variant="outlined" sx={{ p: 3, borderRadius: 0 }}>
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        Request Details
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="h6" sx={{ mb: 0.5 }}>
+          Request Details
+        </Typography>
+        {selectedRequestTypeLabel && (
+          <Typography variant="body2" color="text.secondary">
+            Service request type: {selectedRequestTypeLabel}
+          </Typography>
+        )}
+      </Box>
+
+      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
+        <Box component="span" sx={{ color: "#d32f2f", fontWeight: 600 }}>*</Box> Indicates required
       </Typography>
+
+      {contextFieldsForDisplay.length > 0 && contextValues && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5 }}>
+            Context (from selection above)
+          </Typography>
+          <Grid container spacing={2}>
+            {contextFieldsForDisplay.map((v) => (
+              <Grid key={v.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                <Box sx={{ mb: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    {v.questionText}
+                  </Typography>
+                </Box>
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={getContextValue(v.questionText, contextValues)}
+                  disabled
+                  sx={{
+                    "& .MuiOutlinedInput-root": { borderRadius: 0 },
+                  }}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
+
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {sortedVariables.map((variable) => {
-          const value = values[variable.id] ?? "";
-          const type = variable.type ?? VARIABLE_TYPE_SINGLE_LINE;
-
-          if (
-            type === VARIABLE_TYPE_SELECT ||
-            type === VARIABLE_TYPE_RADIO ||
-            type === VARIABLE_TYPE_CHECKBOX
-          ) {
-            return (
-              <FormControl key={variable.id} fullWidth size="small">
-                <InputLabel id={`var-${variable.id}`}>
-                  {variable.questionText}
-                </InputLabel>
-                <Select
-                  labelId={`var-${variable.id}`}
-                  value={value}
-                  label={variable.questionText}
-                  onChange={(e) =>
-                    onChange(variable.id, e.target.value as string)
-                  }
-                  sx={{ borderRadius: 0 }}
-                >
-                  <MenuItem value="">
-                    <em>Select...</em>
-                  </MenuItem>
-                  <MenuItem value="Yes">Yes</MenuItem>
-                  <MenuItem value="No">No</MenuItem>
-                </Select>
-              </FormControl>
-            );
-          }
-
-          if (type === VARIABLE_TYPE_MULTI_LINE) {
-            return (
-              <TextField
-                key={variable.id}
-                fullWidth
-                multiline
-                size="small"
-                rows={4}
-                label={variable.questionText}
-                value={value}
-                onChange={(e) => onChange(variable.id, e.target.value)}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 0 } }}
-              />
-            );
-          }
-
-          return (
-            <TextField
-              key={variable.id}
-              fullWidth
-              size="small"
-              label={variable.questionText}
-              value={value}
-              onChange={(e) => onChange(variable.id, e.target.value)}
-              sx={{ "& .MuiOutlinedInput-root": { borderRadius: 0 } }}
-            />
-          );
-        })}
+        <Grid container spacing={2}>
+          {userFields.map(renderField)}
+        </Grid>
       </Box>
     </Paper>
   );

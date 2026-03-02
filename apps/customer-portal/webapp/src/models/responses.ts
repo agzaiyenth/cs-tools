@@ -902,8 +902,15 @@ export interface ConversationResponse {
 }
 
 // Response for creating a support case. Used to navigate to case details.
+// Backend returns additional fields that can be used to populate SR display.
 export interface CreateCaseResponse {
   id: string;
+  internalId?: string;
+  number?: string;
+  createdBy?: string;
+  createdOn?: string;
+  state?: { id: string; label: string };
+  type?: { id: string; label: string };
 }
 
 // Product vulnerability item from search response.

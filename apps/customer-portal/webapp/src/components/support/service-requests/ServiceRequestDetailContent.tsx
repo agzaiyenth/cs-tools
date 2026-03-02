@@ -44,6 +44,7 @@ import { usePatchCase } from "@api/usePatchCase";
 import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
 import { useSuccessBanner } from "@context/success-banner/SuccessBannerContext";
 import useGetCaseComments from "@api/useGetCaseComments";
+import useGetUserDetails from "@api/useGetUserDetails";
 import { usePostComment } from "@api/usePostComment";
 import type { CaseDetails } from "@models/responses";
 import type { CaseComment } from "@models/responses";
@@ -155,6 +156,8 @@ export default function ServiceRequestDetailContent({
   onBack,
 }: ServiceRequestDetailContentProps): JSX.Element {
   const theme = useTheme();
+  const { data: userDetails } = useGetUserDetails();
+  const currentUserEmail = userDetails?.email?.toLowerCase() ?? "";
   const [commentText, setCommentText] = useState("");
 
   const { data: commentsData } = useGetCaseComments(projectId ?? "", caseId, {
@@ -406,7 +409,7 @@ export default function ServiceRequestDetailContent({
                     <Calendar size={16} />
                   </Box>
                   <Typography variant="caption" color="text.secondary">
-                    Created
+                    Requested On
                   </Typography>
                 </Stack>
                 <Typography variant="body2" color="text.primary">
@@ -487,41 +490,53 @@ export default function ServiceRequestDetailContent({
                   No comments yet.
                 </Typography>
               ) : (
-                commentsToShow.map((comment: CaseComment) => (
-                  <Stack
-                    key={comment.id}
-                    direction="row"
-                    spacing={1.5}
-                    alignItems="flex-start"
-                  >
-                    <Avatar
-                      sx={{
-                        width: 32,
-                        height: 32,
-                        fontSize: "0.75rem",
-                        bgcolor: "action.hover",
-                      }}
+                commentsToShow.map((comment: CaseComment) => {
+                  const isCurrentUser =
+                    (comment.createdBy?.toLowerCase() ?? "") === currentUserEmail;
+                  const avatarBg = isCurrentUser
+                    ? alpha(theme.palette.info?.light ?? "#0288d1", 0.2)
+                    : alpha(theme.palette.primary?.light ?? "#fa7b3f", 0.2);
+                  const avatarColor = isCurrentUser
+                    ? (theme.palette.info?.main ?? "#0288d1")
+                    : (theme.palette.primary?.main ?? "#fa7b3f");
+                  return (
+                    <Stack
+                      key={comment.id}
+                      direction="row"
+                      spacing={1.5}
+                      alignItems="flex-start"
                     >
-                      {getInitials(comment.createdBy)}
-                    </Avatar>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ display: "block" }}
+                      <Avatar
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          fontSize: "0.75rem",
+                          bgcolor: avatarBg,
+                          color: avatarColor,
+                          flexShrink: 0,
+                        }}
                       >
-                        {comment.createdBy} • {formatRelativeTime(comment.createdOn)}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.primary"
-                        sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}
-                      >
-                        {stripHtml(comment.content)}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                ))
+                        {getInitials(comment.createdBy)}
+                      </Avatar>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ display: "block" }}
+                        >
+                          {comment.createdBy} • {formatRelativeTime(comment.createdOn)}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color="text.primary"
+                          sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}
+                        >
+                          {stripHtml(comment.content)}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  );
+                })
               )}
             </Stack>
             <Stack direction="row" spacing={1} alignItems="flex-start">
@@ -552,17 +567,54 @@ export default function ServiceRequestDetailContent({
               Assignment
             </Typography>
             <Stack spacing={1.5}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Users size={16} />
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  p: 1.5,
+                  borderRadius: 1,
+                  bgcolor: alpha(theme.palette.primary?.main ?? "#fa7b3f", 0.08),
+                  border: "1px solid",
+                  borderColor: alpha(
+                    theme.palette.primary?.main ?? "#fa7b3f",
+                    0.35,
+                  ),
+                }}
+              >
+                <Users
+                  size={16}
+                  color={theme.palette.primary?.main ?? "#fa7b3f"}
+                />
                 <Typography variant="body2" color="text.primary">
                   Assigned To: {assignedLabel ?? "--"}
                 </Typography>
               </Box>
               {data?.issueType?.label && (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Folder size={16} />
-                  <Typography variant="body2" color="text.primary">
-                    Categorized: {data.issueType.label}
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    p: 1.5,
+                    borderRadius: 1,
+                    bgcolor: alpha(theme.palette.info?.light ?? "#0288d1", 0.12),
+                    border: "1px solid",
+                    borderColor: alpha(
+                      theme.palette.info?.main ?? "#0288d1",
+                      0.25,
+                    ),
+                  }}
+                >
+                  <Folder
+                    size={16}
+                    color={theme.palette.info?.main ?? "#0288d1"}
+                  />
+                  <Typography
+                    variant="body2"
+                    sx={{ color: theme.palette.info?.main ?? "#0288d1" }}
+                  >
+                    Category: {data.issueType.label}
                   </Typography>
                 </Box>
               )}
@@ -660,25 +712,78 @@ export default function ServiceRequestDetailContent({
             <Typography variant="subtitle2" color="text.primary" sx={{ mb: 1.5 }}>
               Activity Timeline
             </Typography>
-            <Stack spacing={1.5}>
+            <Box
+              sx={{
+                position: "relative",
+                pl: 3,
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  left: 13,
+                  top: 14,
+                  bottom: 14,
+                  width: 2,
+                  bgcolor: alpha(
+                    theme.palette.primary?.main ?? "#fa7b3f",
+                    0.4,
+                  ),
+                  borderRadius: 1,
+                },
+              }}
+            >
               {timelineEntries.map((entry, idx) => (
                 <Stack
                   key={`${entry.type}-${entry.date}-${idx}`}
                   direction="row"
                   spacing={1.5}
                   alignItems="flex-start"
+                  sx={{
+                    position: "relative",
+                    pb: idx < timelineEntries.length - 1 ? 2 : 0,
+                  }}
                 >
                   <Box
                     sx={{
-                      width: 10,
-                      height: 10,
+                      width: 28,
+                      height: 28,
                       borderRadius: "50%",
-                      bgcolor: idx === 0 ? "success.main" : "primary.main",
-                      mt: 0.75,
+                      bgcolor:
+                        idx === 0
+                          ? "success.main"
+                          : alpha(
+                              theme.palette.primary?.main ?? "#fa7b3f",
+                              0.15,
+                            ),
+                      border: "2px solid",
+                      borderColor:
+                        idx === 0
+                          ? "success.main"
+                          : (theme.palette.primary?.main ?? "#fa7b3f"),
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      mt: 0.25,
                       flexShrink: 0,
+                      zIndex: 1,
                     }}
-                  />
-                  <Box>
+                  >
+                    {idx === 0 ? (
+                      <Box
+                        component="span"
+                        sx={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: "50%",
+                          bgcolor: "success.contrastText",
+                        }}
+                      />
+                    ) : entry.type === "comment" ? (
+                      <MessageSquare size={12} color={theme.palette.primary?.main ?? "#fa7b3f"} />
+                    ) : (
+                      <Calendar size={12} color={theme.palette.primary?.main ?? "#fa7b3f"} />
+                    )}
+                  </Box>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography
                       variant="caption"
                       fontWeight={600}
@@ -705,7 +810,7 @@ export default function ServiceRequestDetailContent({
                   </Box>
                 </Stack>
               ))}
-            </Stack>
+            </Box>
           </Paper>
 
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 0 }}>

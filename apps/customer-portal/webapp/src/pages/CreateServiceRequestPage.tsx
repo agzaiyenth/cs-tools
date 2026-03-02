@@ -31,6 +31,7 @@ import {
   useMemo,
   useCallback,
   useEffect,
+  useRef,
   type FormEvent,
   type JSX,
 } from "react";
@@ -53,6 +54,7 @@ import {
 import type { CreateServiceRequestPayload } from "@models/requests";
 import CatalogSelector from "@components/support/service-requests/CatalogSelector";
 import VariableFormFields from "@components/support/service-requests/VariableFormFields";
+import UploadAttachmentModal from "@components/support/case-details/attachments-tab/UploadAttachmentModal";
 
 /**
  * CreateServiceRequestPage - multi-step form to create a service request.
@@ -74,6 +76,11 @@ export default function CreateServiceRequestPage(): JSX.Element {
   const [variableValues, setVariableValues] = useState<Record<string, string>>(
     {},
   );
+  type AttachmentItem = { id: string; file: File };
+  const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
+  const attachmentNamesRef = useRef<Map<string, string>>(new Map());
+  const attachmentIdCounterRef = useRef(0);
+  const [isAttachmentModalOpen, setIsAttachmentModalOpen] = useState(false);
 
   const { data: projectDetails, isLoading: isProjectLoading } =
     useGetProjectDetails(projectId || "");
@@ -113,6 +120,16 @@ export default function CreateServiceRequestPage(): JSX.Element {
     useSearchCatalogs(productId);
   const { data: variablesData, isLoading: isVariablesLoading } =
     useGetCatalogItemVariables(selectedCatalogId, selectedCatalogItemId);
+
+  const selectedCatalogItemLabel = useMemo(() => {
+    if (!selectedCatalogId || !selectedCatalogItemId || !catalogsData?.catalogs)
+      return undefined;
+    const catalog = catalogsData.catalogs.find((c) => c.id === selectedCatalogId);
+    const item = catalog?.catalogItems?.find(
+      (i) => i.id === selectedCatalogItemId,
+    );
+    return item?.label;
+  }, [catalogsData?.catalogs, selectedCatalogId, selectedCatalogItemId]);
 
   const { mutate: postCase, isPending: isCreatePending } = usePostCase();
 
@@ -155,6 +172,27 @@ export default function CreateServiceRequestPage(): JSX.Element {
     setVariableValues((prev) => ({ ...prev, [variableId]: value }));
   }, []);
 
+  const handleAttachmentClick = () => setIsAttachmentModalOpen(true);
+
+  const handleSelectAttachment = (file: File, attachmentName?: string) => {
+    setAttachments((prev) => {
+      const sig = `${file.name}-${file.size}-${file.lastModified}`;
+      if (prev.some((a) => `${a.file.name}-${a.file.size}-${a.file.lastModified}` === sig))
+        return prev;
+      const id = `att-${++attachmentIdCounterRef.current}-${Date.now()}`;
+      if (attachmentName?.trim()) attachmentNamesRef.current.set(id, attachmentName.trim());
+      return [...prev, { id, file }];
+    });
+  };
+
+  const handleAttachmentRemove = (index: number) => {
+    setAttachments((prev) => {
+      const item = prev[index];
+      if (item) attachmentNamesRef.current.delete(item.id);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
   const handleBack = () => {
     if (window.history.length > 1) {
       navigate(-1);
@@ -165,7 +203,19 @@ export default function CreateServiceRequestPage(): JSX.Element {
     }
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const s = typeof reader.result === "string" ? reader.result : "";
+        const i = s.indexOf(",");
+        resolve(i >= 0 ? s.slice(i + 1) : s);
+      };
+      reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+      reader.readAsDataURL(file);
+    });
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!projectId) return;
 
@@ -200,19 +250,40 @@ export default function CreateServiceRequestPage(): JSX.Element {
       return;
     }
 
+    let encodedAttachments: Array<{ name: string; file: string }> = [];
+    if (attachments.length > 0) {
+      try {
+        encodedAttachments = await Promise.all(
+          attachments.map(async (item) => ({
+            name: attachmentNamesRef.current.get(item.id) || item.file.name,
+            file: await fileToBase64(item.file),
+          })),
+        );
+      } catch (err) {
+        showError("Failed to process attachments. Please try again.");
+        return;
+      }
+    }
+
     const payload: CreateServiceRequestPayload = {
-      caseType: "service_request",
+      type: "service_request",
       projectId,
       deploymentId: deploymentMatch.id,
       deployedProductId: productId,
       catalogId: selectedCatalogId,
       catalogItemId: selectedCatalogItemId,
       variables: variablePayload,
+      ...(encodedAttachments.length > 0 && { attachments: encodedAttachments }),
     };
 
     postCase(payload, {
       onSuccess: (data) => {
-        showSuccess("Service request created successfully");
+        const srNumber = (data as { number?: string }).number;
+        showSuccess(
+          srNumber
+            ? `Service request ${srNumber} created successfully`
+            : "Service request created successfully",
+        );
         navigate(`/${projectId}/support/service-requests/${data.id}`);
       },
       onError: (error) => {
@@ -370,8 +441,25 @@ export default function CreateServiceRequestPage(): JSX.Element {
             isLoading={isVariablesLoading}
             values={variableValues}
             onChange={handleVariableChange}
+            selectedRequestTypeLabel={selectedCatalogItemLabel}
+            contextValues={{
+              projectDisplay: projectDisplay,
+              deploymentDisplay: deployment,
+              productDisplay:
+                sortedProductOptions.find((p) => p.id === product)?.label ?? "",
+            }}
+            attachments={attachments}
+            onAttachmentClick={handleAttachmentClick}
+            onAttachmentRemove={handleAttachmentRemove}
+            onAttachmentAdd={(file, name) => handleSelectAttachment(file, name)}
           />
         )}
+
+        <UploadAttachmentModal
+          open={isAttachmentModalOpen}
+          onClose={() => setIsAttachmentModalOpen(false)}
+          onSelect={handleSelectAttachment}
+        />
 
         <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
           <Button
