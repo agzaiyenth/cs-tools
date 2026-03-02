@@ -54,6 +54,7 @@ import { useInfiniteChangeRequestComments } from "@api/useInfiniteChangeRequestC
 import ChangeRequestCommentInput from "@components/support/change-requests/ChangeRequestCommentInput";
 import { formatCommentDate, hasDisplayableContent, stripAllTags } from "@utils/support";
 import { generateChangeRequestDetailsPdf } from "@utils/changeRequestDetailsPdf";
+import { ApiMutationKeys } from "@constants/apiConstants";
 import {
   formatImpactLabel,
   getChangeRequestStateIcon,
@@ -126,16 +127,19 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
   }, [commentsData, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Check if any change request comment mutation is pending
-  const isPostingComment = useIsMutating({ mutationKey: ["postChangeRequestComment"] }) > 0;
+  const isPostingComment = useIsMutating({ mutationKey: ApiMutationKeys.POST_CHANGE_REQUEST_COMMENT }) > 0;
+
+  // Flatten all comments from all pages with defensive handling
+  const allComments = useMemo(() => {
+    return commentsData?.pages.flatMap((page) => page.comments ?? []) ?? [];
+  }, [commentsData?.pages]);
 
   const commentsSorted = useMemo(() => {
-    // Flatten all comments from all pages
-    const allComments = commentsData?.pages.flatMap((page) => page.comments) ?? [];
     return [...allComments].sort(
       (a, b) =>
         new Date(a.createdOn).getTime() - new Date(b.createdOn).getTime(),
     );
-  }, [commentsData?.pages]);
+  }, [allComments]);
 
   const commentsToShow = useMemo(
     () => commentsSorted.filter(hasDisplayableContent),
@@ -1058,8 +1062,7 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
           sx={{ flex: 1 }}
           onClick={() => {
             try {
-              // Flatten all comments from all pages for PDF
-              const allComments = commentsData?.pages.flatMap((page) => page.comments) ?? [];
+              // Use memoized allComments for PDF generation
               generateChangeRequestDetailsPdf(
                 changeRequest,
                 allComments,
