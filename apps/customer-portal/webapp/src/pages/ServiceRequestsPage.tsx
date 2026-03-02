@@ -35,6 +35,7 @@ import useGetProjectCases from "@api/useGetProjectCases";
 import { CaseType } from "@constants/supportConstants";
 import ServiceRequestsList from "@components/support/service-requests/ServiceRequestsList";
 import ServiceRequestsSearchBar from "@components/support/service-requests/ServiceRequestsSearchBar";
+import ServiceRequestsStatCards from "@components/support/service-requests/ServiceRequestsStatCards";
 
 export type ServiceRequestStatusFilter =
   | "all"
@@ -103,6 +104,34 @@ export default function ServiceRequestsPage(): JSX.Element {
     () => data?.pages.flatMap((p) => p.cases) ?? [],
     [data],
   );
+
+  const srStats = useMemo(() => {
+    const counts = { pending: 0, inProgress: 0, completed: 0, rejected: 0 };
+    for (const sr of allServiceRequests) {
+      const statusLabel = sr.status?.label?.toLowerCase() ?? "";
+      if (
+        statusLabel.includes("open") ||
+        statusLabel.includes("awaiting") ||
+        statusLabel.includes("waiting") ||
+        statusLabel.includes("pending")
+      ) {
+        counts.pending += 1;
+      } else if (statusLabel.includes("progress")) {
+        counts.inProgress += 1;
+      } else if (statusLabel.includes("rejected") || statusLabel.includes("cancelled")) {
+        counts.rejected += 1;
+      } else if (
+        statusLabel.includes("closed") ||
+        statusLabel.includes("resolved") ||
+        statusLabel.includes("completed")
+      ) {
+        counts.completed += 1;
+      } else {
+        counts.pending += 1;
+      }
+    }
+    return counts;
+  }, [allServiceRequests]);
 
   const filteredServiceRequests = useMemo(() => {
     let filtered = [...allServiceRequests];
@@ -212,6 +241,12 @@ export default function ServiceRequestsPage(): JSX.Element {
           New Service Request
         </Button>
       </Box>
+
+      <ServiceRequestsStatCards
+        isLoading={isCasesAreaLoading}
+        isError={false}
+        stats={srStats}
+      />
 
       <ServiceRequestsSearchBar
         searchTerm={searchTerm}
