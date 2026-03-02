@@ -14,11 +14,17 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
 import TimeCardsDateFilter from "@time-tracking/TimeCardsDateFilter";
 
 describe("TimeCardsDateFilter", () => {
+  const mockTimeCardStates = [
+    { id: "Pending", label: "Pending" },
+    { id: "Submitted", label: "Submitted" },
+    { id: "Approved", label: "Approved" },
+  ];
+
   it("should render filter by date range label and date inputs", () => {
     render(
       <TimeCardsDateFilter
@@ -26,8 +32,9 @@ describe("TimeCardsDateFilter", () => {
         endDate="2025-12-31"
         onStartDateChange={() => {}}
         onEndDateChange={() => {}}
-        shownCount={5}
-        totalCount={5}
+        state=""
+        onStateChange={() => {}}
+        timeCardStates={mockTimeCardStates}
       />,
     );
 
@@ -35,23 +42,47 @@ describe("TimeCardsDateFilter", () => {
       screen.getByText("Filter by Date Range:"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Showing 5 of 5 time logs"),
+      screen.getByText("Filter by State:"),
     ).toBeInTheDocument();
   });
 
-  it("should show Loading when isLoading is true", () => {
+  it("should show state dropdown with all options and allow selection", async () => {
+    const onStateChange = vi.fn();
+    
     render(
       <TimeCardsDateFilter
         startDate="2025-01-01"
         endDate="2025-12-31"
         onStartDateChange={() => {}}
         onEndDateChange={() => {}}
-        shownCount={0}
-        totalCount={0}
-        isLoading
+        state=""
+        onStateChange={onStateChange}
+        timeCardStates={mockTimeCardStates}
       />,
     );
 
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
+    expect(screen.getByText("Filter by State:")).toBeInTheDocument();
+    
+    // Find the Select component
+    const stateSelect = screen.getByRole("combobox", { name: /filter by state/i });
+    expect(stateSelect).toBeInTheDocument();
+    
+    // Open the dropdown by clicking the select
+    fireEvent.mouseDown(stateSelect);
+    
+    // Wait for options to appear and check that all state options are present
+    await waitFor(() => {
+      expect(screen.getByRole("option", { name: "All States" })).toBeInTheDocument();
+    });
+    
+    expect(screen.getByRole("option", { name: "Pending" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Submitted" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Approved" })).toBeInTheDocument();
+    
+    // Select a state by clicking the option
+    const pendingOption = screen.getByRole("option", { name: "Pending" });
+    fireEvent.click(pendingOption);
+    
+    expect(onStateChange).toHaveBeenCalledWith("Pending");
   });
 });

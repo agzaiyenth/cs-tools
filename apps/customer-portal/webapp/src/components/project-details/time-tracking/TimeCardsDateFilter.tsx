@@ -20,24 +20,28 @@ import {
   Typography,
   TextField,
   InputAdornment,
+  FormControl,
+  Select,
+  MenuItem,
 } from "@wso2/oxygen-ui";
 import { Calendar } from "@wso2/oxygen-ui-icons-react";
 import { type JSX } from "react";
+import type { MetadataItem } from "@models/responses";
 
 export interface TimeCardsDateFilterProps {
   startDate: string;
   endDate: string;
   onStartDateChange: (value: string) => void;
   onEndDateChange: (value: string) => void;
-  shownCount: number;
-  totalCount: number;
-  isLoading?: boolean;
+  state: string;
+  onStateChange: (value: string) => void;
+  timeCardStates?: MetadataItem[];
 }
 
 /**
- * TimeCardsDateFilter provides date range filters for time cards and shows count summary.
+ * TimeCardsDateFilter provides date range and state filters for time cards.
  *
- * @param {TimeCardsDateFilterProps} props - Date values, handlers, and counts.
+ * @param {TimeCardsDateFilterProps} props - Date values (startDate, endDate), change handlers (onStartDateChange, onEndDateChange, onStateChange), current state value, and available timeCardStates.
  * @returns {JSX.Element} The rendered filter card.
  */
 export default function TimeCardsDateFilter({
@@ -45,9 +49,9 @@ export default function TimeCardsDateFilter({
   endDate,
   onStartDateChange,
   onEndDateChange,
-  shownCount,
-  totalCount,
-  isLoading = false,
+  state,
+  onStateChange,
+  timeCardStates = [],
 }: TimeCardsDateFilterProps): JSX.Element {
   return (
     <Card
@@ -58,25 +62,23 @@ export default function TimeCardsDateFilter({
         gap: 3,
       }}
     >
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Calendar size={16} style={{ color: "var(--oxygen-palette-text-secondary)" }} />
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+          flexWrap: "wrap",
+        }}
+      >
+        {/* Date Range Filter */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1, minWidth: "300px" }}>
           <Typography
             variant="body2"
             component="label"
-            sx={{ fontWeight: 500, color: "text.secondary" }}
+            sx={{ fontWeight: 500, color: "text.secondary", whiteSpace: "nowrap" }}
           >
             Filter by Date Range:
           </Typography>
-        </Box>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-            flexWrap: "wrap",
-          }}
-        >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Typography
               component="label"
@@ -127,14 +129,35 @@ export default function TimeCardsDateFilter({
               }}
             />
           </Box>
+        </Box>
+
+        {/* State Filter */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1, minWidth: "300px" }}>
           <Typography
+            id="state-filter-label"
             variant="body2"
-            sx={{ color: "text.secondary", ml: "auto" }}
+            component="label"
+            sx={{ fontWeight: 500, color: "text.secondary", whiteSpace: "nowrap" }}
           >
-            {isLoading
-              ? "Loading..."
-              : `Showing ${shownCount} of ${totalCount} time logs`}
+            Filter by State:
           </Typography>
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <Select
+              labelId="state-filter-label"
+              id="state-filter-select"
+              value={state}
+              onChange={(e) => onStateChange(e.target.value as string)}
+              displayEmpty
+              aria-labelledby="state-filter-label"
+            >
+              <MenuItem value="">All States</MenuItem>
+              {timeCardStates.map((stateOption) => (
+                <MenuItem key={stateOption.id} value={stateOption.id}>
+                  {stateOption.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
       </Box>
     </Card>

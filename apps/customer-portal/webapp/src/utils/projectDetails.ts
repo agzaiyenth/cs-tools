@@ -23,6 +23,7 @@ import {
   PROJECT_USER_STATUSES,
   TIME_TRACKING_BADGE_TYPES,
   type TimeTrackingBadgeType,
+  TIME_CARD_STATE,
   DEPLOYMENT_STATUS,
   PRODUCT_SUPPORT_STATUS,
   type ProjectStatusChipColor,
@@ -32,18 +33,33 @@ import {
  * Get the theme color path for a time card state chip (e.g. Approved, Submitted).
  * Use with resolveColorFromTheme for SupportOverviewCard-style chips.
  *
- * @param {string} state - The time card state.
+ * @param {Object | null | undefined} state - The time card state object with id and label.
  * @returns {string} Theme palette path (e.g. "success.main", "info.main").
  */
 export const getTimeCardStateColorPath = (
-  state: string | null | undefined,
+  state: { id: string; label: string } | null | undefined,
 ): string => {
-  const normalized = state?.toLowerCase();
-  if (normalized === "approved") return "success.main";
-  if (normalized === "submitted") return "info.main";
-  if (normalized === "rejected" || normalized === "draft")
-    return "warning.main";
-  return "text.secondary";
+  if (!state?.id) return "text.secondary";
+
+  // Normalize state ID to match TIME_CARD_STATE constants (title case)
+  const normalizedId = state.id.charAt(0).toUpperCase() + state.id.slice(1).toLowerCase();
+
+  switch (normalizedId) {
+    case TIME_CARD_STATE.APPROVED:
+      return "success.main";
+    case TIME_CARD_STATE.SUBMITTED:
+      return "info.main";
+    case TIME_CARD_STATE.REJECTED:
+      return "error.main";
+    case TIME_CARD_STATE.RECALLED:
+      return "warning.main";
+    case TIME_CARD_STATE.PENDING:
+      return "info.main";
+    case TIME_CARD_STATE.PROCESSED:
+      return "success.main";
+    default:
+      return "text.secondary";
+  }
 };
 
 /**
@@ -157,6 +173,7 @@ export const formatProjectDateTime = (dateString: string): string => {
     });
     return `${dateStr} at ${timeStr}`;
   } catch (error) {
+    console.error(`Error formatting date string: ${dateString}`, error);
     return "";
   }
 };

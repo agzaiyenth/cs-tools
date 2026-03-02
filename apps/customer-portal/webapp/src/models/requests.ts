@@ -208,6 +208,7 @@ export interface TimeCardSearchRequest {
   filters?: {
     startDate?: string;
     endDate?: string;
+    states?: string[];
   };
   pagination?: {
     limit?: number;
