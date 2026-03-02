@@ -257,6 +257,7 @@ export default function ServiceRequestsPage(): JSX.Element {
         onSearchChange={handleSearchChange}
         statusFilter={statusFilter}
         onStatusFilterChange={handleStatusFilterChange}
+        stats={srStats}
       />
 
       <Box
