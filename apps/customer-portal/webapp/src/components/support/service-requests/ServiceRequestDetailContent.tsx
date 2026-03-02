@@ -226,26 +226,50 @@ export default function ServiceRequestDetailContent({
   );
 
   const timelineEntries = useMemo(() => {
-    const entries: { type: string; label: string; date: string; desc?: string }[] = [
-      {
+    const entries: {
+      type: string;
+      label: string;
+      date: string;
+      actor: string;
+      desc: string;
+    }[] = [];
+
+    if (data?.createdOn) {
+      entries.push({
         type: "created",
         label: "Service Request Created",
-        date: data?.createdOn ?? "",
-        desc: "New service request submitted",
-      },
-    ];
+        date: data.createdOn,
+        actor: requestedBy ?? data?.engineerEmail ?? "System",
+        desc: "Initial service request submitted",
+      });
+    }
+
     commentsToShow.forEach((c) => {
       entries.push({
         type: "comment",
         label: "Comment Added",
         date: c.createdOn,
-        desc: `${c.createdBy} - ${formatRelativeTime(c.createdOn)}`,
+        actor: c.createdBy ?? "Unknown",
+        desc: "",
       });
     });
+
+    if (data?.closedOn) {
+      const closedByLabel =
+        data?.closedBy?.label ?? data?.closedBy?.name ?? "System";
+      entries.push({
+        type: "status_changed",
+        label: "Status Changed",
+        date: data.closedOn,
+        actor: closedByLabel,
+        desc: `Status changed to ${statusLabel ?? "Closed"}`,
+      });
+    }
+
     return entries.sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
-  }, [data?.createdOn, commentsToShow]);
+  }, [data, statusLabel, requestedBy, commentsToShow]);
 
   const handleAddComment = () => {
     const content = commentText.trim();
@@ -719,14 +743,11 @@ export default function ServiceRequestDetailContent({
                 "&::before": {
                   content: '""',
                   position: "absolute",
-                  left: 13,
+                  left: 35,
                   top: 14,
                   bottom: 14,
                   width: 2,
-                  bgcolor: alpha(
-                    theme.palette.primary?.main ?? "#fa7b3f",
-                    0.4,
-                  ),
+                  bgcolor: "grey.400",
                   borderRadius: 1,
                 },
               }}
@@ -744,69 +765,43 @@ export default function ServiceRequestDetailContent({
                 >
                   <Box
                     sx={{
-                      width: 28,
-                      height: 28,
+                      width: 24,
+                      height: 24,
                       borderRadius: "50%",
-                      bgcolor:
-                        idx === 0
-                          ? "success.main"
-                          : alpha(
-                              theme.palette.primary?.main ?? "#fa7b3f",
-                              0.15,
-                            ),
                       border: "2px solid",
-                      borderColor:
-                        idx === 0
-                          ? "success.main"
-                          : (theme.palette.primary?.main ?? "#fa7b3f"),
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      mt: 0.25,
+                      borderColor: theme.palette.primary?.main ?? "#fa7b3f",
+                      bgcolor: "background.paper",
                       flexShrink: 0,
                       zIndex: 1,
+                      mt: 0.25,
                     }}
-                  >
-                    {idx === 0 ? (
-                      <Box
-                        component="span"
-                        sx={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: "50%",
-                          bgcolor: "success.contrastText",
-                        }}
-                      />
-                    ) : entry.type === "comment" ? (
-                      <MessageSquare size={12} color={theme.palette.primary?.main ?? "#fa7b3f"} />
-                    ) : (
-                      <Calendar size={12} color={theme.palette.primary?.main ?? "#fa7b3f"} />
-                    )}
-                  </Box>
+                  />
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography
-                      variant="caption"
+                      variant="body2"
                       fontWeight={600}
                       color="text.primary"
                     >
                       {entry.label}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                      sx={{ mt: 0.25 }}
+                    >
+                      {entry.actor} - {formatRelativeTime(entry.date)}
                     </Typography>
                     {entry.desc && (
                       <Typography
                         variant="caption"
                         color="text.secondary"
                         display="block"
+                        sx={{ mt: 0.25 }}
                       >
                         {entry.desc}
                       </Typography>
                     )}
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      display="block"
-                    >
-                      {formatRelativeTime(entry.date)}
-                    </Typography>
                   </Box>
                 </Stack>
               ))}
