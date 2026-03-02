@@ -113,7 +113,7 @@ export default function DeploymentDocumentList({
           )}
         </Box>
         <Button
-          variant="outlined"
+          variant="contained"
           size="small"
           startIcon={<Upload size={16} aria-hidden />}
           sx={{ height: 32, fontSize: "0.75rem" }}

@@ -79,6 +79,12 @@ function ProductsSkeleton(): JSX.Element {
                 flex: 1,
               }}
             >
+              <Skeleton
+                variant="rounded"
+                width={20}
+                height={20}
+                sx={{ mt: 0.25, flexShrink: 0 }}
+              />
               <Box sx={{ flex: 1 }}>
                 <Box
                   sx={{
@@ -150,6 +156,7 @@ export default function DeploymentProductList({
   const {
     data: products = [],
     isLoading,
+    isFetching,
     isError,
   } = useGetDeploymentsProducts(deploymentId);
   const patchProduct = usePatchDeploymentProduct();
@@ -168,9 +175,6 @@ export default function DeploymentProductList({
         productId: productToDelete.id,
         body: { active: false },
       });
-      queryClient.invalidateQueries({
-        queryKey: [ApiQueryKeys.DEPLOYMENT_PRODUCTS, deploymentId],
-      });
       setDeleteModalOpen(false);
       setProductToDelete(null);
     } catch (error) {
@@ -188,7 +192,7 @@ export default function DeploymentProductList({
           <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
             WSO2 Products
           </Typography>
-          {isLoading ? (
+          {isLoading || isFetching ? (
             <Skeleton
               variant="rounded"
               width={32}
@@ -202,7 +206,7 @@ export default function DeploymentProductList({
           )}
         </Box>
         <Button
-          variant="outlined"
+          variant="contained"
           size="small"
           startIcon={<Plus />}
           sx={{ height: 32, fontSize: "0.75rem" }}
@@ -211,7 +215,7 @@ export default function DeploymentProductList({
           Add Product
         </Button>
       </Box>
-      {isLoading ? (
+      {isLoading || isFetching ? (
         <ProductsSkeleton />
       ) : isError ? (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 2 }}>
@@ -363,7 +367,6 @@ function ProductItemRow({
                 variant="outlined"
                 sx={{ height: 20, fontSize: "0.75rem" }}
               />
-              <ErrorIndicator entityName="support status" size="small" />
             </Box>
             <Typography
               variant="caption"
@@ -394,7 +397,7 @@ function ProductItemRow({
                   variant="caption"
                   sx={{ whiteSpace: "nowrap", lineHeight: 1 }}
                 >
-                  {coresStr} cores
+                  Cores: {coresStr}
                 </Typography>
               </Box>
               <Box
@@ -411,7 +414,7 @@ function ProductItemRow({
                   variant="caption"
                   sx={{ whiteSpace: "nowrap", lineHeight: 1 }}
                 >
-                  {tpsStr} TPS
+                  TPS: {tpsStr}
                 </Typography>
               </Box>
               <Box

@@ -33,6 +33,7 @@ import { X } from "@wso2/oxygen-ui-icons-react";
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
   type ChangeEvent,
   type JSX,
@@ -78,23 +79,19 @@ export default function EditDeploymentModal({
   const deploymentTypes = filtersData?.deploymentTypes ?? [];
 
   const [form, setForm] = useState(INITIAL_FORM);
+  const prevDeploymentIdRef = useRef<string | null>(null);
 
   const isSubmitting = patchDeployment.isPending;
   const isValid = !!projectId && !!deployment?.id;
 
-  const handleClose = useCallback(() => {
-    setForm(INITIAL_FORM);
-    onClose();
-  }, [onClose]);
-
+  // Reset form when modal closes or deployment changes
   useEffect(() => {
     if (!open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm(INITIAL_FORM);
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (open && deployment) {
+      prevDeploymentIdRef.current = null;
+    } else if (deployment && deployment.id !== prevDeploymentIdRef.current) {
+      prevDeploymentIdRef.current = deployment.id;
       setForm({
         name: deployment.name ?? "",
         typeKey: deployment.type?.id ?? "",
@@ -102,6 +99,11 @@ export default function EditDeploymentModal({
       });
     }
   }, [open, deployment]);
+
+  const handleClose = useCallback(() => {
+    setForm(INITIAL_FORM);
+    onClose();
+  }, [onClose]);
 
   const handleTextChange =
     (field: "name" | "description") =>
@@ -132,11 +134,12 @@ export default function EditDeploymentModal({
       body.description = newDescription;
     }
 
-    const newTypeKey = Number(form.typeKey);
+    const newTypeKey =
+      form.typeKey && form.typeKey.trim() ? Number(form.typeKey) : undefined;
     const originalTypeKey = deployment.type?.id
       ? Number(deployment.type.id)
       : undefined;
-    if (newTypeKey !== originalTypeKey) {
+    if (newTypeKey !== undefined && newTypeKey !== originalTypeKey) {
       body.typeKey = newTypeKey;
     }
 
@@ -162,9 +165,6 @@ export default function EditDeploymentModal({
   }, [
     isValid,
     deployment,
-    deployment?.name,
-    deployment?.description,
-    deployment?.type?.id,
     form.name,
     form.description,
     form.typeKey,
