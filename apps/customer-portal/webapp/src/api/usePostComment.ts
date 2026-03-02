@@ -22,7 +22,7 @@ import {
 import { useAsgardeo } from "@asgardeo/react";
 import { useLogger } from "@hooks/useLogger";
 import { useAuthApiClient } from "@context/AuthApiContext";
-import { ApiQueryKeys } from "@constants/apiConstants";
+import { ApiQueryKeys, ApiMutationKeys } from "@constants/apiConstants";
 import { CommentType } from "@constants/supportConstants";
 
 export interface PostCommentRequest {
@@ -52,6 +52,7 @@ export function usePostComment(): UseMutationResult<
   const fetchFn = useAuthApiClient();
 
   return useMutation<void, Error, PostCommentVariables>({
+    mutationKey: ApiMutationKeys.POST_COMMENT,
     mutationFn: async ({
       caseId,
       body,
