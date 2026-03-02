@@ -879,14 +879,6 @@ export const SERVICE_REQUEST_STAT_CONFIGS: SupportStatConfig<ServiceRequestStatK
   ];
 
 /**
- * Filter values for change requests page.
- */
-export interface ChangeRequestFilterValues {
-  stateId?: string;
-  impactId?: string;
-}
-
-/**
  * Change request filter definitions.
  */
 export const CHANGE_REQUEST_FILTER_DEFINITIONS: Array<{
