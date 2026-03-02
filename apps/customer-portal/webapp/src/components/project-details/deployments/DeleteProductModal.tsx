@@ -56,6 +56,13 @@ export default function DeleteProductModal({
   }, [isDeleting, onClose]);
 
   const productName = product?.product?.label || "this product";
+  const productVersion =
+    typeof product?.version === "object"
+      ? product?.version?.label
+      : product?.version;
+  const displayName = productVersion
+    ? `${productName} (${productVersion})`
+    : productName;
 
   return (
     <Dialog
@@ -92,7 +99,7 @@ export default function DeleteProductModal({
           color="text.secondary"
         >
           {product
-            ? `Are you sure you want to delete "${productName}"? This action cannot be undone.`
+            ? `Are you sure you want to delete "${displayName}"? This action cannot be undone.`
             : "Are you sure you want to delete this product? This action cannot be undone."}
         </Typography>
       </DialogContent>
