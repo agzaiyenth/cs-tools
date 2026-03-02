@@ -14,7 +14,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  type UseInfiniteQueryResult,
+  type InfiniteData,
+} from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
 import { useLogger } from "@hooks/useLogger";
 import { ApiQueryKeys } from "@constants/apiConstants";
@@ -26,45 +30,39 @@ export interface UseSearchProjectTimeCardsParams {
   projectId: string;
   startDate?: string;
   endDate?: string;
-  state?: string;
-  limit?: number;
-  offset?: number;
+  states?: string[];
 }
 
 /**
- * Custom hook to search project time cards with date range filters.
+ * Custom hook to search project time cards with date range filters using infinite query.
  *
  * @param {UseSearchProjectTimeCardsParams} params - Project ID and filters.
- * @returns {UseQueryResult<TimeCardSearchResponse, Error>} The query result object.
+ * @returns {UseInfiniteQueryResult<InfiniteData<TimeCardSearchResponse>, Error>} The infinite query result object.
  */
 export default function useSearchProjectTimeCards({
   projectId,
   startDate,
   endDate,
-  state,
-  limit = 10,
-  offset = 0,
-}: UseSearchProjectTimeCardsParams): UseQueryResult<
-  TimeCardSearchResponse,
+  states,
+}: UseSearchProjectTimeCardsParams): UseInfiniteQueryResult<
+  InfiniteData<TimeCardSearchResponse>,
   Error
 > {
   const logger = useLogger();
   const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
   const fetchFn = useAuthApiClient();
 
-  return useQuery<TimeCardSearchResponse, Error>({
+  return useInfiniteQuery<TimeCardSearchResponse, Error>({
     queryKey: [
       ApiQueryKeys.TIME_CARDS_SEARCH,
       projectId,
       startDate,
       endDate,
-      state,
-      limit,
-      offset,
+      states,
     ],
-    queryFn: async (): Promise<TimeCardSearchResponse> => {
+    queryFn: async ({ pageParam = 0 }): Promise<TimeCardSearchResponse> => {
       logger.debug(
-        `Searching time cards for project ID: ${projectId}, start: ${startDate}, end: ${endDate}`,
+        `Searching time cards for project ID: ${projectId}, start: ${startDate}, end: ${endDate}, offset: ${pageParam}`,
       );
 
       try {
@@ -79,9 +77,9 @@ export default function useSearchProjectTimeCards({
           filters: {
             startDate,
             endDate,
-            ...(state && { state }),
+            ...(states && states.length > 0 && { states }),
           },
-          pagination: { limit, offset },
+          pagination: { limit: 10, offset: pageParam as number },
         };
 
         const response = await fetchFn(requestUrl, {
@@ -107,6 +105,11 @@ export default function useSearchProjectTimeCards({
         logger.error("[useSearchProjectTimeCards] Error:", error);
         throw error;
       }
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => {
+      const nextOffset = lastPage.offset + lastPage.limit;
+      return nextOffset < lastPage.totalRecords ? nextOffset : undefined;
     },
     enabled:
       !!projectId && !!startDate && !!endDate && isSignedIn && !isAuthLoading,

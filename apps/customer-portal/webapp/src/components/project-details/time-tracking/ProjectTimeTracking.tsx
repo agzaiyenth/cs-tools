@@ -15,7 +15,7 @@
 // under the License.
 
 import { Box, Grid } from "@wso2/oxygen-ui";
-import { useState, useMemo, type JSX } from "react";
+import { useState, useMemo, useEffect, type JSX } from "react";
 import useSearchProjectTimeCards from "@api/useSearchProjectTimeCards";
 import useGetTimeCardsStats from "@api/useGetTimeCardsStats";
 import useGetProjectFilters from "@api/useGetProjectFilters";
@@ -76,20 +76,31 @@ export default function ProjectTimeTracking({
   });
 
   const {
-    data: timeCardsData,
+    data,
     isLoading: isTimeCardsLoading,
     isError: isTimeCardsError,
+    hasNextPage,
+    fetchNextPage,
   } = useSearchProjectTimeCards({
     projectId,
     startDate,
     endDate,
-    state: state || undefined,
-    limit: 50,
-    offset: 0,
+    states: state ? [state] : undefined,
   });
 
-  const timeCards = timeCardsData?.timeCards ?? [];
-  const totalRecords = timeCardsData?.totalRecords ?? 0;
+  // Auto-fetch all pages
+  useEffect(() => {
+    if (!data || !hasNextPage) return;
+    void fetchNextPage();
+  }, [data, hasNextPage, fetchNextPage]);
+
+  // Flatten all pages into a single array
+  const timeCards = useMemo(
+    () => data?.pages.flatMap((page) => page.timeCards) ?? [],
+    [data]
+  );
+  
+  const totalRecords = data?.pages?.[0]?.totalRecords ?? 0;
 
   return (
     <Box>
