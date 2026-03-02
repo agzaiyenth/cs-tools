@@ -56,7 +56,10 @@ export function usePostComment(): UseMutationResult<
       caseId,
       body,
     }: PostCommentVariables): Promise<void> => {
-      logger.debug("[usePostComment] Request:", { caseId, contentLength: body.content?.length ?? 0 });
+      logger.debug("[usePostComment] Request:", {
+        caseId,
+        contentLength: body.content?.length ?? 0,
+      });
 
       if (!isSignedIn || isAuthLoading) {
         throw new Error("User must be signed in to post a comment");
@@ -70,7 +73,10 @@ export function usePostComment(): UseMutationResult<
       const requestUrl = `${baseUrl}/cases/${caseId}/comments`;
       const response = await fetchFn(requestUrl, {
         method: "POST",
-        body: JSON.stringify({ content: body.content, type: CommentType.COMMENT }),
+        body: JSON.stringify({
+          content: body.content,
+          type: body.type,
+        }),
       });
 
       logger.debug("[usePostComment] Response status:", response.status);
