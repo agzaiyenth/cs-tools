@@ -108,6 +108,18 @@ export interface CreateCaseRequest {
   conversationId?: string;
 }
 
+// Request body for creating a service request (POST /cases with type: "service_request").
+export interface CreateServiceRequestPayload {
+  type: "service_request";
+  projectId: string;
+  deploymentId: string;
+  deployedProductId: string;
+  catalogId: string;
+  catalogItemId: string;
+  variables: { id: string; value: string }[];
+  attachments?: Array<{ name: string; file: string }>;
+}
+
 // Request body for product vulnerabilities search.
 export interface ProductVulnerabilitiesSearchRequest {
   filters?: {
@@ -141,6 +153,8 @@ export interface PostDeploymentAttachmentRequest {
 export interface PatchDeploymentProductRequest {
   cores?: number;
   tps?: number;
+  description?: string;
+  active?: boolean;
 }
 
 // Request body for POST /deployments/:deploymentId/products.
@@ -150,6 +164,7 @@ export interface PostDeploymentProductRequest {
   projectId: string;
   cores?: number;
   tps?: number;
+  description?: string;
 }
 
 // Request body for POST /products/:productId/versions/search.
