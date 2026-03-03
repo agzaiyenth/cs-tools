@@ -108,6 +108,18 @@ export interface CreateCaseRequest {
   parentCaseId?: string;
 }
 
+// Request body for creating a service request (POST /cases with type: "service_request").
+export interface CreateServiceRequestPayload {
+  type: "service_request";
+  projectId: string;
+  deploymentId: string;
+  deployedProductId: string;
+  catalogId: string;
+  catalogItemId: string;
+  variables: { id: string; value: string }[];
+  attachments?: Array<{ name: string; file: string }>;
+}
+
 // Request body for product vulnerabilities search.
 export interface ProductVulnerabilitiesSearchRequest {
   filters?: {

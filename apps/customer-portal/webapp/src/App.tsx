@@ -32,6 +32,9 @@ import AnnouncementDetailsPage from "@pages/AnnouncementDetailsPage";
 import AllConversationsPage from "@pages/AllConversationsPage";
 import ConversationDetailsPage from "@pages/ConversationDetailsPage";
 import CaseDetailsPage from "@pages/CaseDetailsPage";
+import ServiceRequestsPage from "@pages/ServiceRequestsPage";
+import ServiceRequestDetailsPage from "@pages/ServiceRequestDetailsPage";
+import CreateServiceRequestPage from "@pages/CreateServiceRequestPage";
 import NoveraChatPage from "@pages/NoveraChatPage";
 import DescribeIssuePage from "@pages/DescribeIssuePage";
 import CreateCasePage from "@pages/CreateCasePage";
@@ -96,6 +99,17 @@ export default function App(): JSX.Element {
                           <Route
                             path=":conversationId"
                             element={<ConversationDetailsPage />}
+                          />
+                        </Route>
+                        <Route path="service-requests">
+                          <Route index element={<ServiceRequestsPage />} />
+                          <Route
+                            path="create"
+                            element={<CreateServiceRequestPage />}
+                          />
+                          <Route
+                            path=":serviceRequestId"
+                            element={<ServiceRequestDetailsPage />}
                           />
                         </Route>
                         <Route path="chat">

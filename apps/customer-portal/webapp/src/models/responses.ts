@@ -432,6 +432,8 @@ export interface CaseDetails {
   parentCase: IdLabelRef | null;
   conversation: unknown;
   issueType: IdLabelRef | null;
+  catalog?: IdLabelRef | null;
+  catalogItem?: IdLabelRef | null;
   deployment: IdLabelRef | null;
   severity: IdLabelRef | null;
   status: IdLabelRef | null;
@@ -902,8 +904,15 @@ export interface ConversationResponse {
 }
 
 // Response for creating a support case. Used to navigate to case details.
+// Backend returns additional fields that can be used to populate SR display.
 export interface CreateCaseResponse {
   id: string;
+  internalId?: string;
+  number?: string;
+  createdBy?: string;
+  createdOn?: string;
+  state?: { id: string; label: string };
+  type?: { id: string; label: string };
 }
 
 // Product vulnerability item from search response.
@@ -1013,3 +1022,37 @@ export interface UpdateLevelEntry {
 
 // Response for POST /updates/levels/search (map keyed by update level string).
 export type UpdateLevelsSearchResponse = Record<string, UpdateLevelEntry>;
+
+// Catalog item within a catalog (from POST /deployments/products/:id/catalogs/search).
+export interface CatalogItem {
+  id: string;
+  label: string;
+}
+
+// Catalog with its items (from POST /deployments/products/:id/catalogs/search).
+export interface Catalog {
+  id: string;
+  name: string;
+  catalogItems: CatalogItem[];
+}
+
+// Response for POST /deployments/products/:id/catalogs/search.
+export interface CatalogSearchResponse {
+  catalogs: Catalog[];
+  totalRecords: number;
+  limit?: number;
+  offset?: number;
+}
+
+// Variable definition for a catalog item (from GET /catalogs/:catalogId/items/:itemId).
+export interface CatalogItemVariable {
+  id: string;
+  questionText: string;
+  order: number;
+  type: string;
+}
+
+// Response for GET /catalogs/:catalogId/items/:itemId.
+export interface CatalogItemVariablesResponse {
+  variables: CatalogItemVariable[];
+}
