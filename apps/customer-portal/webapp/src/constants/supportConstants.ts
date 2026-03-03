@@ -839,6 +839,46 @@ export const CHANGE_REQUEST_STAT_CONFIGS: SupportStatConfig<ChangeRequestStatKey
   ];
 
 /**
+ * Valid keys for service requests statistics.
+ */
+export type ServiceRequestStatKey =
+  | "pending"
+  | "inProgress"
+  | "completed"
+  | "rejected";
+
+/**
+ * Configuration for the service requests statistics cards.
+ */
+export const SERVICE_REQUEST_STAT_CONFIGS: SupportStatConfig<ServiceRequestStatKey>[] =
+  [
+    {
+      icon: Clock,
+      iconColor: "warning",
+      key: "pending",
+      label: "Pending",
+    },
+    {
+      icon: Info,
+      iconColor: "info",
+      key: "inProgress",
+      label: "In Progress",
+    },
+    {
+      icon: CircleCheck,
+      iconColor: "success",
+      key: "completed",
+      label: "Completed",
+    },
+    {
+      icon: XCircle,
+      iconColor: "error",
+      key: "rejected",
+      label: "Rejected",
+    },
+  ];
+
+/**
  * Change request filter definitions.
  */
 export const CHANGE_REQUEST_FILTER_DEFINITIONS: Array<{

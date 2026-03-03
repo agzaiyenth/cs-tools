@@ -168,10 +168,9 @@ export default function ChangeRequestsPage(): JSX.Element {
   // Handle export completion when all data is fetched
   useEffect(() => {
     if (isExporting) {
-      if (isInfiniteError || isStatsError) {
-        // Handle error case
-        console.error("Failed to fetch change requests or stats for export");
-        setTimeout(() => setIsExporting(false), 0);
+      if (isInfiniteError) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setIsExporting(false);
       } else if (
         !isInfiniteLoading &&
         !isStatsLoading &&
