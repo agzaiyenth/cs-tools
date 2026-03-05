@@ -3467,7 +3467,8 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
                 {
                     snProjectId: id,
                     snAccountId: payload.snAccountId,
-                    isAdmin: payload.isAdmin
+                    isAdmin: payload.isAdmin,
+                    userEmail: userInfo.email
                 }
         );
         if response is error {
