@@ -25,7 +25,10 @@ import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
 
 interface ProjectMetadataProps {
   createdDate: string;
-  projectType: string;
+  type: {
+    id: string;
+    label: string;
+  };
   supportTier: string;
   slaStatus: string;
   isLoading?: boolean;
@@ -34,7 +37,7 @@ interface ProjectMetadataProps {
 
 const ProjectMetadata = ({
   createdDate,
-  projectType,
+  type,
   supportTier,
   slaStatus,
   isLoading,
@@ -74,10 +77,10 @@ const ProjectMetadata = ({
             <Skeleton variant="rounded" width={80} height={24} />
           ) : (
             <Chip
-              label={projectType}
+              label={type?.label ?? ""}
               size="small"
               variant="outlined"
-              color={getProjectTypeColor(projectType)}
+              color={getProjectTypeColor(type?.label ?? "")}
               sx={{ font: "caption" }}
             />
           )}
