@@ -1557,10 +1557,16 @@ public type ProjectChangeRequestStatsResponse record {|
     json...;
 |};
 
+# DateTime string type with YYYY-MM-DD HH:MM:SS format constraint.
+@constraint:String {
+    pattern: re `^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]) ([01]\d|2[0-3]):[0-5]\d:[0-5]\d$`
+}
+public type DateTimeWithoutTimezone string;
+
 # Request payload for updating a change request.
 public type ChangeRequestUpdatePayload record {|
     # Planned start date and time (format: YYYY-MM-DD HH:MM:SS)
-    DateTime plannedStartOn;
+    DateTimeWithoutTimezone plannedStartOn;
 |};
 
 # Response from updating a change request.
