@@ -86,12 +86,13 @@ const CONTEXT_FIELD_PATTERNS: Array<{
   { pattern: /^environment$/i, getValue: (c) => c.deploymentDisplay },
 ];
 
-/** Context fields to hide from UI (Project, Deployment, Product already selected above). */
+/** Context fields to hide from UI (Project, Deployment, Product, Environment already selected above). */
 const CONTEXT_FIELDS_HIDDEN_FROM_DISPLAY = [
   /^project$/i,
   /^deployments?$/i,
   /^product$/i,
   /^wso2\s*product$/i,
+  /^environment$/i,
 ];
 
 /** Fields hidden from customers but still sent in the payload (internal/system use). */

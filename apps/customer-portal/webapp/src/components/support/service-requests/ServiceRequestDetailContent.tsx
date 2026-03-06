@@ -498,6 +498,7 @@ export default function ServiceRequestDetailContent({
                         {v.name}
                       </Typography>
                       {hasHtml ? (
+                        // biome-ignore security/noDangerouslySetInnerHtml: sanitized with DOMPurify
                         <Box
                           component="div"
                           sx={{
@@ -533,7 +534,7 @@ export default function ServiceRequestDetailContent({
                 });
               }
               const filtered = requestDetailSections.filter(
-                (s) => !/^wso2\s*product$/i.test(s.label.trim()),
+                (s) => !REQUEST_DETAILS_HIDDEN_VARIABLE_NAMES.test(s.label.trim()),
               );
               if (filtered.length > 0) {
                 return filtered.map((section, index) => {
@@ -551,6 +552,7 @@ export default function ServiceRequestDetailContent({
                       >
                         {section.label}
                       </Typography>
+                      {/* biome-ignore security/noDangerouslySetInnerHtml: sanitized with DOMPurify */}
                       <Box
                         component="div"
                         sx={{
@@ -585,6 +587,7 @@ export default function ServiceRequestDetailContent({
                   )
                 : "";
               return (
+                // biome-ignore security/noDangerouslySetInnerHtml: sanitized with DOMPurify
                 <Box
                   component="div"
                   sx={{
@@ -689,6 +692,7 @@ export default function ServiceRequestDetailContent({
                             {(comment.content ?? "").trim() || ""}
                           </Box>
                         ) : (
+                          // biome-ignore security/noDangerouslySetInnerHtml: sanitized with DOMPurify
                           <Box
                             component="div"
                             sx={{
