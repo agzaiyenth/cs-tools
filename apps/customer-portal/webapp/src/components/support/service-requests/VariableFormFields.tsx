@@ -32,6 +32,7 @@ import type { CatalogItemVariable } from "@models/responses";
 import {
   isAttachmentField,
   isFileCopyPathField,
+  isDescriptionField,
 } from "@utils/serviceRequestValidation";
 import Editor from "@components/common/rich-text-editor/Editor";
 
@@ -59,14 +60,6 @@ const VARIABLE_TYPE_MULTI_LINE = "Multi Line Text";
 const VARIABLE_TYPE_SELECT = "Select Box";
 const VARIABLE_TYPE_CHECKBOX = "Checkbox";
 const VARIABLE_TYPE_RADIO = "Radio Buttons";
-
-function isDescriptionField(questionText: string): boolean {
-  const normalized = (questionText ?? "")
-    .replace(/^\s*\*?\s*/, "")
-    .trim()
-    .toLowerCase();
-  return normalized === "description";
-}
 
 /** Parse display label (strip leading asterisk). Hot fix: all typable fields are mandatory. */
 function parseRequiredLabel(questionText: string): { label: string } {
@@ -99,7 +92,6 @@ const CONTEXT_FIELDS_HIDDEN_FROM_DISPLAY = [
   /^deployments?$/i,
   /^product$/i,
   /^wso2\s*product$/i,
-  /^environment$/i,
 ];
 
 /** Fields hidden from customers but still sent in the payload (internal/system use). */

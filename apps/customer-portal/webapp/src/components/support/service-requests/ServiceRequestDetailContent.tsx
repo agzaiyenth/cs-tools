@@ -24,7 +24,6 @@ import {
   Stack,
   Typography,
   Avatar,
-  TextField,
   alpha,
   useTheme,
 } from "@wso2/oxygen-ui";
@@ -72,6 +71,7 @@ import {
 import { CASE_STATUS_ACTIONS, CommentType } from "@constants/supportConstants";
 import ErrorIndicator from "@components/common/error-indicator/ErrorIndicator";
 import CaseDetailsAttachmentsPanel from "@case-details-attachments/CaseDetailsAttachmentsPanel";
+import Editor from "@components/common/rich-text-editor/Editor";
 import DOMPurify from "dompurify";
 
 export interface ServiceRequestDetailContentProps {
@@ -90,6 +90,20 @@ interface RequestDetailSection {
 
 const WSO2_PRODUCT_LABEL_REGEX = /^\s*wso2\s*product\s*:?\s*/i;
 
+/** Names of context fields to hide from Request Details (same as create flow). */
+const REQUEST_DETAILS_HIDDEN_VARIABLE_NAMES =
+  /^(project|deployments?|product|wso2\s*product|environment)$/i;
+
+function isPlainTextComment(content: string): boolean {
+  const trimmed = (content ?? "").trim();
+  if (!trimmed) return true;
+  const hasHtmlTags = trimmed.includes("<") || trimmed.includes(">");
+  const isFullCodeBlock =
+    trimmed.startsWith("[code]") && trimmed.endsWith("[/code]");
+  const hasInlineImageRef = /\[img:\d+\]/.test(trimmed);
+  return !hasHtmlTags && !isFullCodeBlock && !hasInlineImageRef;
+}
+
 function stripWso2ProductFromText(text: string): string {
   if (!text?.trim()) return text ?? "";
   return text
@@ -107,60 +121,28 @@ function parseRequestDetails(
   }
 
   if (typeof document === "undefined") {
-    const text = stripHtml(descriptionHtml);
-    return text ? [{ label: "Details", value: text }] : [];
+    return [{ label: "Details", value: descriptionHtml }];
   }
 
-  const container = document.createElement("div");
-  container.innerHTML = descriptionHtml;
-
   const sections: RequestDetailSection[] = [];
-  let currentLabel: string | null = null;
-  let currentValueParts: string[] = [];
+  const strongRegex = /<strong[^>]*>([\s\S]*?)<\/strong>/gi;
+  let match: RegExpExecArray | null;
 
-  const flush = () => {
-    const rawLabel = currentLabel?.trim().replace(/:$/, "") ?? "";
-    const valueText = stripHtml(currentValueParts.join(" ").trim());
-    if (rawLabel && valueText) {
-      sections.push({
-        label: rawLabel,
-        value: valueText,
-      });
+  while ((match = strongRegex.exec(descriptionHtml)) !== null) {
+    const label = (match[1] ?? "").replace(/<[^>]+>/g, "").trim().replace(/:$/, "");
+    const valueStart = match.index + match[0].length;
+    const nextStrong = descriptionHtml.slice(valueStart).search(/<strong[^>]*>/i);
+    const valueEnd =
+      nextStrong >= 0 ? valueStart + nextStrong : descriptionHtml.length;
+    const valueHtml = descriptionHtml.slice(valueStart, valueEnd).trim();
+    if (label && valueHtml) {
+      sections.push({ label, value: valueHtml });
     }
-    currentLabel = null;
-    currentValueParts = [];
-  };
+  }
 
-  const walk = (node: Node) => {
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const el = node as HTMLElement;
-      const tag = el.tagName.toLowerCase();
-
-      if (tag === "strong") {
-        flush();
-        currentLabel = el.textContent ?? "";
-        return;
-      }
-
-      if (tag === "br") {
-        currentValueParts.push("\n");
-        return;
-      }
-
-      Array.from(el.childNodes).forEach(walk);
-      return;
-    }
-
-    if (node.nodeType === Node.TEXT_NODE) {
-      const text = node.textContent ?? "";
-      if (text.trim()) {
-        currentValueParts.push(text);
-      }
-    }
-  };
-
-  Array.from(container.childNodes).forEach(walk);
-  flush();
+  if (sections.length === 0 && descriptionHtml.trim()) {
+    sections.push({ label: "Details", value: descriptionHtml.trim() });
+  }
 
   return sections;
 }
@@ -177,6 +159,7 @@ export default function ServiceRequestDetailContent({
   const { data: userDetails } = useGetUserDetails();
   const currentUserEmail = userDetails?.email?.toLowerCase() ?? "";
   const [commentText, setCommentText] = useState("");
+  const [commentResetTrigger, setCommentResetTrigger] = useState(0);
 
   const {
     data: commentsData,
@@ -295,14 +278,17 @@ export default function ServiceRequestDetailContent({
 
   const handleAddComment = () => {
     const content = commentText.trim();
-    if (!content) return;
+    if (!content || !stripHtml(content).trim()) return;
     postComment.mutate(
       {
         caseId,
         body: { content, type: CommentType.COMMENT },
       },
       {
-        onSuccess: () => setCommentText(""),
+        onSuccess: () => {
+          setCommentText("");
+          setCommentResetTrigger((prev) => prev + 1);
+        },
         onError: (err) => {
           showError(
             err?.message ?? "Failed to add comment. Please try again.",
@@ -489,68 +475,134 @@ export default function ServiceRequestDetailContent({
             {(() => {
               const apiVariables = data?.variables ?? [];
               const filteredVariables = apiVariables.filter(
-                (v) => !/^wso2\s*product$/i.test((v.name ?? "").trim()),
+                (v) => !REQUEST_DETAILS_HIDDEN_VARIABLE_NAMES.test((v.name ?? "").trim()),
               );
               if (filteredVariables.length > 0) {
-                return filteredVariables.map((v, index) => (
-                  <Box key={`${v.name}-${index}`} sx={{ mb: 1.5 }}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ display: "block", mb: 0.5 }}
-                    >
-                      {v.name}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.primary"
-                      sx={{ whiteSpace: "pre-wrap" }}
-                    >
-                      {stripHtml(v.value ?? "").trim() || "--"}
-                    </Typography>
-                    {index < filteredVariables.length - 1 && (
-                      <Divider sx={{ mt: 1.5 }} />
-                    )}
-                  </Box>
-                ));
+                return filteredVariables.map((v, index) => {
+                  const rawValue = (v.value ?? "").trim();
+                  const hasHtml = rawValue.includes("<") || rawValue.includes(">");
+                  const processedValue = hasHtml
+                    ? DOMPurify.sanitize(
+                        convertCodeTagsToHtml(
+                          stripCustomerCommentAddedLabel(rawValue),
+                        ),
+                      )
+                    : "";
+                  return (
+                    <Box key={`${v.name}-${index}`} sx={{ mb: 1.5 }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: "block", mb: 0.5 }}
+                      >
+                        {v.name}
+                      </Typography>
+                      {hasHtml ? (
+                        <Box
+                          component="div"
+                          sx={{
+                            "& p": { mb: 0.5 },
+                            "& p:last-child": { mb: 0 },
+                            "& code": {
+                              display: "block",
+                              p: 1,
+                              bgcolor: "action.hover",
+                              fontSize: "0.875rem",
+                              whiteSpace: "pre-wrap",
+                              overflowWrap: "break-word",
+                            },
+                          }}
+                          dangerouslySetInnerHTML={{
+                            __html: processedValue || "--",
+                          }}
+                        />
+                      ) : (
+                        <Typography
+                          variant="body2"
+                          color="text.primary"
+                          sx={{ whiteSpace: "pre-wrap" }}
+                        >
+                          {rawValue || "--"}
+                        </Typography>
+                      )}
+                      {index < filteredVariables.length - 1 && (
+                        <Divider sx={{ mt: 1.5 }} />
+                      )}
+                    </Box>
+                  );
+                });
               }
               const filtered = requestDetailSections.filter(
                 (s) => !/^wso2\s*product$/i.test(s.label.trim()),
               );
               if (filtered.length > 0) {
-                return filtered.map((section, index) => (
-                  <Box key={`${section.label}-${index}`} sx={{ mb: 1.5 }}>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ display: "block", mb: 0.5 }}
-                    >
-                      {section.label}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.primary"
-                      sx={{ whiteSpace: "pre-wrap" }}
-                    >
-                      {section.value}
-                    </Typography>
-                    {index < filtered.length - 1 && (
-                      <Divider sx={{ mt: 1.5 }} />
-                    )}
-                  </Box>
-                ));
+                return filtered.map((section, index) => {
+                  const processedHtml = DOMPurify.sanitize(
+                    convertCodeTagsToHtml(
+                      stripCustomerCommentAddedLabel(section.value),
+                    ),
+                  );
+                  return (
+                    <Box key={`${section.label}-${index}`} sx={{ mb: 1.5 }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: "block", mb: 0.5 }}
+                      >
+                        {section.label}
+                      </Typography>
+                      <Box
+                        component="div"
+                        sx={{
+                          "& p": { mb: 0.5 },
+                          "& p:last-child": { mb: 0 },
+                          "& code": {
+                            display: "block",
+                            p: 1,
+                            bgcolor: "action.hover",
+                            fontSize: "0.875rem",
+                            whiteSpace: "pre-wrap",
+                            overflowWrap: "break-word",
+                          },
+                        }}
+                        dangerouslySetInnerHTML={{ __html: processedHtml }}
+                      />
+                      {index < filtered.length - 1 && (
+                        <Divider sx={{ mt: 1.5 }} />
+                      )}
+                    </Box>
+                  );
+                });
               }
-              const fallbackText = stripWso2ProductFromText(
-                stripHtml(data?.description ?? ""),
+              const fallbackHtml = stripWso2ProductFromText(
+                data?.description ?? "",
               );
+              const processedFallback = fallbackHtml
+                ? DOMPurify.sanitize(
+                    convertCodeTagsToHtml(
+                      stripCustomerCommentAddedLabel(fallbackHtml),
+                    ),
+                  )
+                : "";
               return (
-                <Typography
-                  variant="body2"
-                  color="text.primary"
-                  sx={{ whiteSpace: "pre-wrap" }}
-                >
-                  {fallbackText || "--"}
-                </Typography>
+                <Box
+                  component="div"
+                  sx={{
+                    "& p": { mb: 0.5 },
+                    "& p:last-child": { mb: 0 },
+                    "& code": {
+                      display: "block",
+                      p: 1,
+                      bgcolor: "action.hover",
+                      fontSize: "0.875rem",
+                      whiteSpace: "pre-wrap",
+                      overflowWrap: "break-word",
+                    },
+                  }}
+                  dangerouslySetInnerHTML={{
+                    __html: processedFallback || "--",
+                  }}
+                />
               );
             })()}
           </Paper>
@@ -625,41 +677,54 @@ export default function ServiceRequestDetailContent({
                         >
                           {comment.createdBy} • {formatRelativeTime(comment.createdOn)}
                         </Typography>
-                        <Box
-                          component="div"
-                          sx={{
-                            mt: 0.5,
-                            "& p": { mb: 0.5 },
-                            "& p:last-child": { mb: 0 },
-                            "& code": {
-                              display: "block",
-                              p: 1,
-                              bgcolor: "action.hover",
-                              fontSize: "0.875rem",
+                        {isPlainTextComment(comment.content ?? "") ? (
+                          <Box
+                            component="div"
+                            sx={{
+                              mt: 0.5,
                               whiteSpace: "pre-wrap",
-                              overflowWrap: "break-word",
-                            },
-                          }}
-                          dangerouslySetInnerHTML={{
-                            __html: (() => {
-                              const raw = comment.content ?? "";
-                              const trimmed = raw.trim();
-                              const isFullCodeWrap =
-                                trimmed.startsWith("[code]") &&
-                                trimmed.endsWith("[/code]");
-                              const afterCode = isFullCodeWrap
-                                ? stripCodeWrapper(raw)
-                                : convertCodeTagsToHtml(raw);
-                              const withoutLabel =
-                                stripCustomerCommentAddedLabel(afterCode);
-                              const withImages = replaceInlineImageSources(
-                                withoutLabel,
-                                comment.inlineAttachments,
-                              );
-                              return DOMPurify.sanitize(withImages);
-                            })(),
-                          }}
-                        />
+                              wordBreak: "break-word",
+                            }}
+                          >
+                            {(comment.content ?? "").trim() || ""}
+                          </Box>
+                        ) : (
+                          <Box
+                            component="div"
+                            sx={{
+                              mt: 0.5,
+                              "& p": { mb: 0.5 },
+                              "& p:last-child": { mb: 0 },
+                              "& code": {
+                                display: "block",
+                                p: 1,
+                                bgcolor: "action.hover",
+                                fontSize: "0.875rem",
+                                whiteSpace: "pre-wrap",
+                                overflowWrap: "break-word",
+                              },
+                            }}
+                            dangerouslySetInnerHTML={{
+                              __html: (() => {
+                                const raw = comment.content ?? "";
+                                const trimmed = raw.trim();
+                                const isFullCodeWrap =
+                                  trimmed.startsWith("[code]") &&
+                                  trimmed.endsWith("[/code]");
+                                const afterCode = isFullCodeWrap
+                                  ? stripCodeWrapper(raw)
+                                  : convertCodeTagsToHtml(raw);
+                                const withoutLabel =
+                                  stripCustomerCommentAddedLabel(afterCode);
+                                const withImages = replaceInlineImageSources(
+                                  withoutLabel,
+                                  comment.inlineAttachments,
+                                );
+                                return DOMPurify.sanitize(withImages);
+                              })(),
+                            }}
+                          />
+                        )}
                       </Box>
                     </Stack>
                   );
@@ -667,14 +732,15 @@ export default function ServiceRequestDetailContent({
               )}
             </Stack>
             <Stack spacing={1.5}>
-              <TextField
-                fullWidth
-                multiline
-                minRows={2}
-                placeholder="Add a comment..."
+              <Editor
                 value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                size="small"
+                onChange={setCommentText}
+                disabled={postComment.isPending}
+                resetTrigger={commentResetTrigger}
+                minHeight={100}
+                showToolbar
+                placeholder="Add a comment..."
+                onSubmitKeyDown={handleAddComment}
               />
               <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
                 <Button
@@ -683,7 +749,9 @@ export default function ServiceRequestDetailContent({
                   color="primary"
                   startIcon={<Send size={16} />}
                   onClick={handleAddComment}
-                  disabled={!commentText.trim() || postComment.isPending}
+                  disabled={
+                    !stripHtml(commentText).trim() || postComment.isPending
+                  }
                   sx={{ textTransform: "none" }}
                 >
                   Add Comment
