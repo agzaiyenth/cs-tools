@@ -34,6 +34,7 @@ import {
   Folder,
   Globe,
   Layers,
+  Loader2,
   MessageSquare,
   Package,
   Send,
@@ -711,7 +712,6 @@ export default function ServiceRequestDetailContent({
                       theme.palette.primary?.main,
                       0.12,
                     ),
-                    borderRadius: "50%",
                   }}
                 >
                   <User
@@ -745,7 +745,6 @@ export default function ServiceRequestDetailContent({
                       theme.palette.info?.main,
                       0.12,
                     ),
-                    borderRadius: "50%",
                   }}
                 >
                   <Folder
@@ -800,14 +799,7 @@ export default function ServiceRequestDetailContent({
                       size="small"
                       startIcon={
                         isThisPending ? (
-                          <Box
-                            sx={{
-                              width: 12,
-                              height: 12,
-                              borderRadius: "50%",
-                              border: "2px solid currentColor",
-                            }}
-                          />
+                          <Loader2 size={12} />
                         ) : (
                           <Icon size={12} />
                         )
