@@ -47,7 +47,11 @@ export default function DashboardPage(): JSX.Element {
 
   const { isLoading: isAuthLoading } = useAsgardeo();
 
-  const { data: project } = useGetProjectDetails(projectId || "");
+  const {
+    data: project,
+    isLoading: isProjectLoading,
+  } = useGetProjectDetails(projectId || "");
+  const projectReady = !isProjectLoading && project !== undefined;
 
   const {
     data: filters,
@@ -56,7 +60,9 @@ export default function DashboardPage(): JSX.Element {
   } = useGetProjectFilters(projectId || "");
 
   const isManagedCloudSubscription =
+    projectReady &&
     project?.type?.label === PROJECT_TYPE_LABELS.MANAGED_CLOUD_SUBSCRIPTION;
+  const excludeS0 = projectReady ? !isManagedCloudSubscription : false;
 
   const { incidentId, queryId } = useMemo(
     () => getIncidentAndQueryIds(filters?.caseTypes),
@@ -75,6 +81,7 @@ export default function DashboardPage(): JSX.Element {
 
   const isDashboardLoading =
     isAuthLoading ||
+    isProjectLoading ||
     isFiltersLoading ||
     isCasesLoading ||
     (!filters && !isErrorFilters) ||
@@ -187,7 +194,7 @@ export default function DashboardPage(): JSX.Element {
 
   const casesTrend = useMemo(() => {
     const catastrophicCount = isManagedCloudSubscription
-      ? (s: { label: string }[]) =>
+      ? (s: { label: string; count?: number }[]) =>
           s.find((x) => x.label === SEVERITY_API_LABELS[0])?.count ?? 0
       : () => 0;
     const mapped = (casesStats?.casesTrend ?? []).map(({ period, severities }) => ({
@@ -286,14 +293,14 @@ export default function DashboardPage(): JSX.Element {
         isErrorOutstanding={isErrorCases}
         isErrorActiveCases={isErrorCases}
         isErrorTrend={isErrorCases}
-        excludeS0={!isManagedCloudSubscription}
+        excludeS0={excludeS0}
       />
       {/* Cases Table */}
       {projectId && (
         <Box sx={{ mt: 3 }}>
           <CasesTable
             projectId={projectId}
-            excludeS0={!isManagedCloudSubscription}
+            excludeS0={excludeS0}
           />
         </Box>
       )}
