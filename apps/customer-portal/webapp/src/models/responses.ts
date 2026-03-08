@@ -79,6 +79,7 @@ export interface UserDetails {
   timeZone: string;
   phoneNumber?: string | null;
   avatar?: string | null;
+  roles?: string[];
 }
 
 // Project user (invited/registered) for project users list.
