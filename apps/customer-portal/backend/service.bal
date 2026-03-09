@@ -190,27 +190,19 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             scim:User|error updatedUser = scim:updateUser({phoneNumber}, userInfo.email, userInfo.userId);
             if updatedUser is error {
                 if getStatusCode(updatedUser) == http:STATUS_BAD_REQUEST {
-                    return <http:BadRequest>{
-                        body: {
-                            message: extractErrorMessage(updatedUser)
-                        }
-                    };
+                    log:printWarn(extractErrorMessage(updatedUser));
+                } else {
+                    log:printError("Failed to update phone number.", updatedUser);
                 }
-
-                string customError = "Failed to update phone number.";
-                log:printError(customError, updatedUser);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customError
-                    }
-                };
             }
 
-            error? cacheInvalidate = userCache.invalidate(string `${userInfo.email}:userinfo`);
-            if cacheInvalidate is error {
-                log:printWarn("Error invalidating user information from cache", cacheInvalidate);
+            if updatedUser is scim:User {
+                error? cacheInvalidate = userCache.invalidate(string `${userInfo.email}:userinfo`);
+                if cacheInvalidate is error {
+                    log:printWarn("Error invalidating user information from cache", cacheInvalidate);
+                }
+                updatedUserResponse.phoneNumber = scim:processPhoneNumber(updatedUser);
             }
-            updatedUserResponse.phoneNumber = scim:processPhoneNumber(updatedUser);
         }
 
         string? timeZone = payload.timeZone;
@@ -218,20 +210,10 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             entity:UserUpdateResponse|error response = entity:updateUser(userInfo.idToken, {timeZone});
             if response is error {
                 if getStatusCode(response) == http:STATUS_BAD_REQUEST {
-                    return <http:BadRequest>{
-                        body: {
-                            message: "Invalid timezone key provided. Please provide a valid timezone key."
-                        }
-                    };
+                    log:printWarn("Invalid timezone key provided.");
+                } else {
+                    log:printError("Failed to update user timezone.", response);
                 }
-
-                string customError = "Failed to update user timezone.";
-                log:printError(customError, response);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customError
-                    }
-                };
             }
             error? cacheInvalidate = userCache.invalidate(string `${userInfo.email}:userinfo`);
             if cacheInvalidate is error {
@@ -348,7 +330,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     }
 
     # Update project details by ID.
-    # 
+    #
     # + id - ID of the project
     # + payload - Project update payload
     # + return - Updated project details or error response
