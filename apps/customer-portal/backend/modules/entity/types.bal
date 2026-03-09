@@ -116,25 +116,28 @@ public type ProjectResponse record {|
     # Project end date 
     Date? endDate;
     # Account information
-    record {|
-        # ID of the account
-        IdString id;
-        # Name of the account
-        string? name;
-        # Activation date
-        string? activationDate;
-        # Deactivation date
-        string? deactivationDate;
-        # Support tier
-        string? supportTier;
-        # Region
-        string? region;
-        # Owner email
-        string? ownerEmail;
-        # Technical owner email
-        string? technicalOwnerEmail;
-        json...;
-    |}? account;
+    Account? account;
+    json...;
+|};
+
+# Account Information.
+public type Account record {|
+    # ID of the account
+    IdString id;
+    # Name of the account
+    string? name;
+    # Activation date
+    string? activationDate;
+    # Deactivation date
+    string? deactivationDate;
+    # Support tier
+    string? supportTier;
+    # Region
+    string? region;
+    # Owner email
+    string? ownerEmail;
+    # Technical owner email
+    string? technicalOwnerEmail;
     json...;
 |};
 

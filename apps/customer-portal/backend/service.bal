@@ -17,7 +17,7 @@
 import customer_portal.ai_chat_agent;
 import customer_portal.authorization;
 import customer_portal.entity;
-import customer_portal.registry_tokens;
+import customer_portal.registry;
 import customer_portal.scim;
 import customer_portal.types;
 import customer_portal.updates;
@@ -141,6 +141,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             firstName: userDetails.firstName,
             lastName: userDetails.lastName,
             timeZone: userDetails.timeZone,
+            roles: userDetails.roles,
             phoneNumber
         };
 
@@ -3410,8 +3411,8 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     # + payload - Registry token creation payload containing project ID and token details
     # + return - Created registry token details or an error response
     resource function post projects/[entity:IdString id]/registry\-tokens(http:RequestContext ctx,
-            types:RegistryTokenCreatePayload payload)
-        returns registry_tokens:RegistryTokenResponse|http:BadRequest|http:InternalServerError {
+            types:RegistryTokenCreatePayload payload) returns registry:TokenCreationResponse|http:BadRequest|
+                http:Unauthorized|http:Forbidden|http:NotFound|http:InternalServerError {
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -3422,16 +3423,130 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
 
-        registry_tokens:RegistryTokenResponse|error response = registry_tokens:createRegistryToken(
+        entity:UserResponse|error userDetails = entity:getUserBasicInfo(userInfo.email, userInfo.idToken);
+        if userDetails is error {
+            if getStatusCode(userDetails) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `Access denied for user: ${userInfo.userId} to Customer Portal`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: "Unauthorized access to the customer portal."
+                    }
+                };
+            }
+
+            string customError = "Failed to retrieve user data.";
+            log:printError(customError, userDetails);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        entity:ProjectResponse|error projectResponse = entity:getProject(userInfo.idToken, id);
+        if projectResponse is error {
+            if getStatusCode(projectResponse) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_ACCESS
+                    }
+                };
+            }
+            if getStatusCode(projectResponse) == http:STATUS_FORBIDDEN {
+                logForbiddenProjectAccess(id, userInfo.userId);
+                return <http:Forbidden>{
+                    body: {
+                        message: ERR_MSG_PROJECT_ACCESS_FORBIDDEN
+                    }
+                };
+            }
+            if getStatusCode(projectResponse) == http:STATUS_NOT_FOUND {
+                log:printWarn(string `Project with ID: ${id} not found for user: ${userInfo.userId}`);
+                return <http:NotFound>{
+                    body: {
+                        message: "The requested project does not exist or you don't have access to it."
+                    }
+                };
+            }
+
+            string customError = "Failed to retrieve project details.";
+            log:printError(customError, projectResponse);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        entity:Account? account = projectResponse.account;
+        if account is () {
+            log:printError("Failed to retrieve account details for the project. Account details not found.");
+            return <http:InternalServerError>{
+                body: {
+                    message: "Failed to retrieve account details for the project."
+                }
+            };
+        }
+        string? accountName = account.name;
+        if accountName is () {
+            log:printError("Failed to retrieve account name for the project. Account name is missing.");
+            return <http:InternalServerError>{
+                body: {
+                    message: "Failed to retrieve account name for the project."
+                }
+            };
+        }
+
+        boolean isAdmin = authorization:checkRoles(userDetails.roles, [authorization:adminRole]);
+
+        // Only allow admins to create service tokens
+        if !isAdmin && payload.tokenType == registry:SERVICE_TOKEN  {
+            log:printWarn(string `User: ${
+                    userInfo.userId} attempted to create a service token without admin privileges.`);
+            return <http:Forbidden>{
+                body: {
+                    message: "Only admins can create service tokens."
+                }
+            };
+        }
+        
+        string? createdFor = payload.createdFor;
+
+        // Enforce 'createdFor' email for service tokens.
+        if payload.tokenType == registry:SERVICE_TOKEN && createdFor is () {
+            log:printWarn(string `User: ${
+                    userInfo.userId} attempted to create a service token without specifying 'createdFor' email.`);
+            return <http:BadRequest>{
+                body: {
+                    message: "'createdFor' email must be specified when creating a service token."
+                }
+            };
+        }
+
+        // Enforce non-admins only to create tokens for themselves.
+        if !isAdmin && createdFor != userInfo.email {
+            log:printWarn(string `User: ${
+                    userInfo.userId} attempted to create a token for another user without admin privileges.`);
+            return <http:Forbidden>{
+                body: {
+                    message: "Only admins can create tokens for other users."
+                }
+            };
+        }
+
+        createdFor = payload.tokenType == registry:USER_TOKEN ? userInfo.email : createdFor;
+
+        registry:TokenCreationResponse|error response = registry:createToken(
                 {
                     snProjectId: id,
-                    accountName: payload.accountName,
-                    projectKey: payload.projectKey,
+                    accountName,
+                    projectKey: projectResponse.key,
                     robotName: payload.robotName,
-                    snAccountId: payload.snAccountId,
+                    snAccountId: account.id,
                     tokenType: payload.tokenType,
                     createdBy: userInfo.email,
-                    createdFor: payload.createdFor
+                    createdFor: createdFor.toString()
                 }
         );
         if response is error {
@@ -3457,10 +3572,9 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     # Search registry tokens for a project based on provided filters.
     #
     # + id - ID of the project for which registry tokens are to be searched
-    # + payload - Registry token search payload containing filters for searching registry tokens
     # + return - List of registry tokens matching the criteria or an error response
-    resource function post projects/[entity:IdString id]/registry\-tokens/search(http:RequestContext ctx,
-            types:RegistryTokenSearchPayload payload) returns http:Ok|http:BadRequest|http:InternalServerError {
+    resource function post projects/[entity:IdString id]/registry\-tokens/search(http:RequestContext ctx)
+        returns http:Ok|http:BadRequest|http:Forbidden|http:NotFound|http:Unauthorized|http:InternalServerError {
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -3471,12 +3585,80 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
 
-        registry_tokens:RegistryTokenResponse[]|error response = registry_tokens:searchRegistryTokens(
+        entity:UserResponse|error userDetails = entity:getUserBasicInfo(userInfo.email, userInfo.idToken);
+        if userDetails is error {
+            if getStatusCode(userDetails) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `Access denied for user: ${userInfo.userId} to Customer Portal`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: "Unauthorized access to the customer portal."
+                    }
+                };
+            }
+
+            string customError = "Failed to retrieve user data.";
+            log:printError(customError, userDetails);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        entity:ProjectResponse|error projectResponse = entity:getProject(userInfo.idToken, id);
+        if projectResponse is error {
+            if getStatusCode(projectResponse) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_ACCESS
+                    }
+                };
+            }
+            if getStatusCode(projectResponse) == http:STATUS_FORBIDDEN {
+                logForbiddenProjectAccess(id, userInfo.userId);
+                return <http:Forbidden>{
+                    body: {
+                        message: ERR_MSG_PROJECT_ACCESS_FORBIDDEN
+                    }
+                };
+            }
+            if getStatusCode(projectResponse) == http:STATUS_NOT_FOUND {
+                log:printWarn(string `Project with ID: ${id} not found for user: ${userInfo.userId}`);
+                return <http:NotFound>{
+                    body: {
+                        message: "The requested project does not exist or you don't have access to it."
+                    }
+                };
+            }
+
+            string customError = "Failed to retrieve project details.";
+            log:printError(customError, projectResponse);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        entity:Account? account = projectResponse.account;
+        if account is () {
+            log:printError("Failed to retrieve account details for the project. Account details not found.");
+            return <http:InternalServerError>{
+                body: {
+                    message: "Failed to retrieve account details for the project."
+                }
+            };
+        }
+
+        boolean isAdmin = authorization:checkRoles(userDetails.roles, [authorization:adminRole]);
+
+        registry:Token[]|error response = registry:searchTokens(
                 {
                     snProjectId: id,
-                    snAccountId: payload.snAccountId,
-                    isAdmin: payload.isAdmin,
-                    userEmail: userInfo.email
+                    snAccountId: account.id,
+                    isAdmin,
+                    userEmail: isAdmin ? () : userInfo.email
                 }
         );
         if response is error {
@@ -3506,7 +3688,9 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     # + id - ID of the registry token to be deleted
     # + return - Success message or an error response
     resource function delete registry\-tokens/[string id](http:RequestContext ctx)
-        returns http:Ok|http:NotFound|http:InternalServerError {
+        returns http:Ok|http:NotFound|http:Unauthorized|http:Forbidden|http:InternalServerError {
+
+        string deletionCustomErr = "Failed to delete token";
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -3517,7 +3701,96 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
 
-        error? response = registry_tokens:deleteRegistryToken(id);
+        entity:UserResponse|error userDetails = entity:getUserBasicInfo(userInfo.email, userInfo.idToken);
+        if userDetails is error {
+            if getStatusCode(userDetails) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `Access denied for user: ${userInfo.userId} to Customer Portal`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: "Unauthorized access to the customer portal."
+                    }
+                };
+            }
+
+            log:printError("Failed to retrieve user data.", userDetails);
+            return <http:InternalServerError>{
+                body: {
+                    message: deletionCustomErr
+                }
+            };
+        }
+
+        boolean isAdmin = authorization:checkRoles(userDetails.roles, [authorization:adminRole]);
+
+        registry:Token|error token = registry:getTokenById(id);
+        if token is error {
+            log:printError("Failed to retrieve registry token details for authorization.", token);
+            return <http:InternalServerError>{
+                body: {
+                    message: deletionCustomErr
+                }
+            };
+        }
+
+        registry:TokenDescriptionInfo|error tokenInformation = registry:deriveTokenInfoFromDescription(token.description);
+        if tokenInformation is error {
+            log:printError("Failed to derive token information.", tokenInformation);
+            return <http:InternalServerError>{
+                body: {
+                    message: deletionCustomErr
+                }
+            };
+        }
+
+        entity:ProjectResponse|error projectResponse = entity:getProject(userInfo.idToken, tokenInformation.snProjectId);
+        if projectResponse is error {
+            if getStatusCode(projectResponse) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_ACCESS
+                    }
+                };
+            }
+            if getStatusCode(projectResponse) == http:STATUS_FORBIDDEN {
+                logForbiddenProjectAccess(id, userInfo.userId);
+                return <http:Forbidden>{
+                    body: {
+                        message: ERR_MSG_PROJECT_ACCESS_FORBIDDEN
+                    }
+                };
+            }
+            if getStatusCode(projectResponse) == http:STATUS_NOT_FOUND {
+                log:printWarn(string `Project with ID: ${id} not found for user: ${userInfo.userId}`);
+                return <http:NotFound>{
+                    body: {
+                        message: "The requested token does not exist or you don't have access to it."
+                    }
+                };
+            }
+
+            log:printError("Failed to retrieve project details.", projectResponse);
+            return <http:InternalServerError>{
+                body: {
+                    message: deletionCustomErr
+                }
+            };
+        }
+
+        // Enforce that only admins can delete service tokens, and users can only delete their own tokens.
+        if !isAdmin && 
+            (tokenInformation.tokenType == registry:SERVICE_TOKEN  || tokenInformation.createdFor != userInfo.email) {
+
+            log:printWarn(string `User: ${
+                    userInfo.userId} attempted to delete a service token without proper privileges`);
+            return <http:Forbidden>{
+                body: {
+                    message: "You don't have the necessary permissions to delete this registry token."
+                }
+            };
+        }
+
+        error? response = registry:deleteToken(id);
         if response is error {
             if getStatusCode(response) == http:STATUS_NOT_FOUND {
                 return <http:NotFound>{
@@ -3526,12 +3799,20 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
                     }
                 };
             }
+            if getStatusCode(response) == http:STATUS_FORBIDDEN {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to delete registry token with ID: ${
+                        id}.`);
+                return <http:Forbidden>{
+                    body: {
+                        message: "You are not authorized to delete this registry token."
+                    }
+                };
+            }
 
-            string customError = "Failed to delete registry token.";
-            log:printError(customError, response);
+            log:printError(deletionCustomErr, response);
             return <http:InternalServerError>{
                 body: {
-                    message: customError
+                    message: deletionCustomErr
                 }
             };
         }
@@ -3547,7 +3828,10 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     # + id - ID of the registry token to be regenerated
     # + return - Regenerated registry token details or an error response
     resource function post registry\-tokens/[string id]/regenerate(http:RequestContext ctx)
-        returns registry_tokens:RegistryTokenResponse|http:NotFound|http:InternalServerError {
+        returns registry:TokenCreationResponse|http:NotFound|http:Unauthorized|http:Forbidden
+            |http:InternalServerError {
+
+        string reGenerateCustomErr = "Failed to re-generate token";
 
         authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -3558,7 +3842,97 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
 
-        registry_tokens:RegistryTokenResponse|error response = registry_tokens:regenerateRegistryToken(id);
+        entity:UserResponse|error userDetails = entity:getUserBasicInfo(userInfo.email, userInfo.idToken);
+        if userDetails is error {
+            if getStatusCode(userDetails) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `Access denied for user: ${userInfo.userId} to Customer Portal`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: "Unauthorized access to the customer portal."
+                    }
+                };
+            }
+
+            string customError = "Failed to retrieve user data.";
+            log:printError(customError, userDetails);
+            return <http:InternalServerError>{
+                body: {
+                    message: reGenerateCustomErr
+                }
+            };
+        }
+
+        boolean isAdmin = authorization:checkRoles(userDetails.roles, [authorization:adminRole]);
+        
+        registry:Token|error token = registry:getTokenById(id);
+        if token is error {
+            log:printError("Failed to retrieve registry token details for authorization.", token);
+            return <http:InternalServerError>{
+                body: {
+                    message: reGenerateCustomErr
+                }
+            };
+        }
+
+        registry:TokenDescriptionInfo|error tokenInformation = registry:deriveTokenInfoFromDescription(token.description);
+        if tokenInformation is error {
+            log:printError("Failed to derive token information.", tokenInformation);
+            return <http:InternalServerError>{
+                body: {
+                    message: reGenerateCustomErr
+                }
+            };
+        }
+
+        entity:ProjectResponse|error projectResponse = entity:getProject(userInfo.idToken, tokenInformation.snProjectId);
+        if projectResponse is error {
+            if getStatusCode(projectResponse) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_ACCESS
+                    }
+                };
+            }
+            if getStatusCode(projectResponse) == http:STATUS_FORBIDDEN {
+                logForbiddenProjectAccess(id, userInfo.userId);
+                return <http:Forbidden>{
+                    body: {
+                        message: ERR_MSG_PROJECT_ACCESS_FORBIDDEN
+                    }
+                };
+            }
+            if getStatusCode(projectResponse) == http:STATUS_NOT_FOUND {
+                log:printWarn(string `Project with ID: ${id} not found for user: ${userInfo.userId}`);
+                return <http:NotFound>{
+                    body: {
+                        message: "The requested token does not exist or you don't have access to it."
+                    }
+                };
+            }
+
+            log:printError("Failed to retrieve project details.", projectResponse);
+            return <http:InternalServerError>{
+                body: {
+                    message: reGenerateCustomErr
+                }
+            };
+        }
+
+        // Enforce that only admins can delete service tokens, and users can only delete their own tokens.
+        if !isAdmin && 
+            (tokenInformation.tokenType == registry:SERVICE_TOKEN  || tokenInformation.createdFor != userInfo.email) {
+
+            log:printWarn(string `User: ${
+                    userInfo.userId} attempted to delete a service token without proper privileges`);
+            return <http:Forbidden>{
+                body: {
+                    message: "You don't have the necessary permissions to delete this registry token."
+                }
+            };
+        }
+
+        registry:TokenCreationResponse|error response = registry:regenerateToken(id);
         if response is error {
             if getStatusCode(response) == http:STATUS_NOT_FOUND {
                 return <http:NotFound>{
@@ -3567,8 +3941,81 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
                     }
                 };
             }
+            if getStatusCode(response) == http:STATUS_FORBIDDEN {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to regenerate registry token with ID: ${id}.`);
+                return <http:Forbidden>{
+                    body: {
+                        message: "You are not authorized to regenerate this registry token."
+                    }
+                };
+            }
 
-            string customError = "Failed to regenerate registry token.";
+            log:printError(reGenerateCustomErr, response);
+            return <http:InternalServerError>{
+                body: {
+                    message: reGenerateCustomErr
+                }
+            };
+        }
+        return response;
+    }
+
+    # Get integration users of a project by project ID.
+    #
+    # + id - ID of the project
+    # + return - List of integration users or error
+    isolated resource function get projects/[string id]/integration\-users(http:RequestContext ctx)
+        returns registry:IntegrationUser[]|http:Unauthorized|http:Forbidden|http:NotFound|
+            http:InternalServerError {
+
+        authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_MSG_USER_INFO_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        entity:ProjectResponse|error projectResponse = entity:getProject(userInfo.idToken, id);
+        if projectResponse is error {
+            if getStatusCode(projectResponse) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_ACCESS
+                    }
+                };
+            }
+            if getStatusCode(projectResponse) == http:STATUS_FORBIDDEN {
+                logForbiddenProjectAccess(id, userInfo.userId);
+                return <http:Forbidden>{
+                    body: {
+                        message: ERR_MSG_PROJECT_ACCESS_FORBIDDEN
+                    }
+                };
+            }
+            if getStatusCode(projectResponse) == http:STATUS_NOT_FOUND {
+                log:printWarn(string `Project with ID: ${id} not found for user: ${userInfo.userId}`);
+                return <http:NotFound>{
+                    body: {
+                        message: "The requested project does not exist or you don't have access to it."
+                    }
+                };
+            }
+
+            string customError = "Failed to retrieve project details.";
+            log:printError(customError, projectResponse);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        registry:IntegrationUser[]|error response = registry:getIntegrationUsersByProjectId(projectResponse.sfId);
+        if response is error {
+            string customError = "Failed to retrieve integration users.";
             log:printError(customError, response);
             return <http:InternalServerError>{
                 body: {
