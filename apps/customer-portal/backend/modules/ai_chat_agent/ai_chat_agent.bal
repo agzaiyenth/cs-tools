@@ -14,6 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import ballerina/websocket;
+import ballerina/log;
 # Create case classification for the given payload.
 #
 # + payload - Case classification payload
@@ -74,4 +76,37 @@ public isolated function deleteChatConversation(string projectId, string convers
 # + return - Recommendation response or error
 public isolated function getRecommendation(RecommendationRequest payload) returns RecommendationResponse|error {
     return aiChatAgentClient->/recommendations.post(payload);
-}   
+}
+
+# Stream chat events from the upstream AI chat agent WebSocket back to the browser caller.
+# Opens a dedicated upstream connection per call, sends the payload, then pipes every event
+# verbatim until a "final" or "error" event or the upstream connection closes.
+#
+# + sessionId - Conversation/session ID used to route to the upstream Python session
+# + payload - Raw JSON string (user_message) to forward to the upstream agent
+# + caller - The browser WebSocket caller to forward events back to
+# + return - Error if the upstream connection or forwarding fails
+public isolated function streamChat(string sessionId, string payload, websocket:Caller caller) returns error? {
+    log:printInfo(string `Initiating WebSocket connection to AI chat agent for session ID: ${sessionId}`);
+    websocket:Client pyClient = check createAiChatAgentWsClient(sessionId);
+    log:printInfo(string `WebSocket connection established with AI chat agent for session ID: ${sessionId}`);
+    check pyClient->writeTextMessage(payload);
+    while true {
+        string|error event = pyClient->readTextMessage();
+        if event is error {
+            if !(event is websocket:ConnectionClosureError) {
+                check caller->writeTextMessage(string `{"type":"error","message":"${event.message()}"}`);
+            }
+            break;
+        }
+        check caller->writeTextMessage(event);
+        json|error parsed = event.fromJsonString();
+        if parsed is map<json> {
+            string evtType = (parsed["type"] ?: "").toString();
+            if evtType == "final" || evtType == "error" {
+                break;
+            }
+        }
+    }
+    _ = check pyClient->close(1000, "session complete");
+}
