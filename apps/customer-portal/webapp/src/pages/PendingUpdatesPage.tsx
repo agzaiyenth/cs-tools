@@ -86,7 +86,7 @@ export default function PendingUpdatesPage(): JSX.Element {
 
   const handleBack = () => {
     if (projectId) {
-      navigate(`/${projectId}/updates`);
+      navigate(`/projects/${projectId}/updates`);
     } else {
       navigate(-1);
     }
@@ -100,7 +100,7 @@ export default function PendingUpdatesPage(): JSX.Element {
         startingUpdateLevel: String(startingUpdateLevel),
         endingUpdateLevel: String(endingUpdateLevel),
       });
-      navigate(`/${projectId}/updates/pending/level/${levelKey}?${params}`);
+      navigate(`/projects/${projectId}/updates/pending/level/${levelKey}?${params}`);
     },
     [navigate, projectId, productName, productBaseVersion, startingUpdateLevel, endingUpdateLevel],
   );
