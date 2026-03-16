@@ -24,6 +24,7 @@ import type { ProjectSupportStats } from "@models/responses";
 export interface UseGetProjectSupportStatsOptions {
   incidentId?: string;
   queryId?: string;
+  caseTypes?: string[];
   query?: string;
 }
 
