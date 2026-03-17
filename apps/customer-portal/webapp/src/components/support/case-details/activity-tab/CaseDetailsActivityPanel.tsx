@@ -52,7 +52,6 @@ export default function CaseDetailsActivityPanel({
   projectId,
   caseId,
   caseCreatedOn,
-  focusMode = false,
   caseStatus,
 }: CaseDetailsActivityPanelProps): JSX.Element {
   const theme = useTheme();
@@ -136,7 +135,6 @@ export default function CaseDetailsActivityPanel({
       {content}
       <ActivityCommentInput
         caseId={caseId}
-        focusMode={focusMode}
         caseStatus={caseStatus}
       />
     </Box>

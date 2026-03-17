@@ -14,16 +14,23 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Grid } from "@wso2/oxygen-ui";
+import { type JSX, useMemo } from "react";
 import {
   Briefcase,
   Clock,
   CircleCheck,
   CircleAlert,
 } from "@wso2/oxygen-ui-icons-react";
-import type { JSX } from "react";
 import type { ProjectCasesStats } from "@models/responses";
-import GenericSubCountCard from "@components/common/GenericSubCountCard";
+import SupportStatGrid from "@components/common/stat-grid/SupportStatGrid";
+import type { SupportStatConfig } from "@constants/supportConstants";
+import {
+  SUPPORT_STATE_AWAITING_INFO,
+  SUPPORT_STATE_CLOSED,
+  SUPPORT_STATE_WAITING_ON_WSO2,
+} from "@constants/supportConstants";
+
+type EngagementsStatKey = "total" | "active" | "completed" | "onHold";
 
 export interface EngagementsStatCardsProps {
   stats?: ProjectCasesStats;
@@ -42,52 +49,60 @@ export default function EngagementsStatCards({
   isLoading,
   isError,
 }: EngagementsStatCardsProps): JSX.Element {
-  const total = stats?.totalCount ?? 0;
-  const active = stats?.activeCount ?? 0;
-  const completed =
-    stats?.stateCount?.find((s) => s.label === "Closed")?.count ?? 0;
-  const onHold =
-    (stats?.stateCount?.find((s) => s.label === "Awaiting Info")?.count ?? 0) +
-    (stats?.stateCount?.find((s) => s.label === "Waiting On WSO2")?.count ?? 0);
+  const configs: SupportStatConfig<EngagementsStatKey>[] = useMemo(() => {
+    return [
+      {
+        icon: Briefcase,
+        iconColor: "primary",
+        key: "total",
+        label: "Total Engagements",
+      },
+      {
+        icon: Clock,
+        iconColor: "info",
+        key: "active",
+        label: "Active Engagements",
+      },
+      {
+        icon: CircleCheck,
+        iconColor: "success",
+        key: "completed",
+        label: "Completed",
+      },
+      {
+        icon: CircleAlert,
+        iconColor: "warning",
+        key: "onHold",
+        label: "On Hold",
+      },
+    ];
+  }, []);
 
-  const showPlaceholder = isLoading || isError;
-  const placeholder = "—";
+  const flattened = useMemo((): Partial<Record<EngagementsStatKey, number>> => {
+    const completed =
+      stats?.stateCount?.find((s) => s.label === SUPPORT_STATE_CLOSED)?.count ??
+      0;
+    const onHold =
+      (stats?.stateCount?.find((s) => s.label === SUPPORT_STATE_AWAITING_INFO)
+        ?.count ?? 0) +
+      (stats?.stateCount?.find((s) => s.label === SUPPORT_STATE_WAITING_ON_WSO2)
+        ?.count ?? 0);
+    return {
+      total: stats?.totalCount ?? 0,
+      active: stats?.activeCount ?? 0,
+      completed,
+      onHold,
+    };
+  }, [stats]);
 
   return (
-    <Grid container spacing={3}>
-      <Grid size={{ xs: 12, md: 6, lg: 3 }}>
-        <GenericSubCountCard
-          label="Total Engagements"
-          value={showPlaceholder ? placeholder : total}
-          icon={<Briefcase size={32} />}
-          color="primary.main"
-        />
-      </Grid>
-      <Grid size={{ xs: 12, md: 6, lg: 3 }}>
-        <GenericSubCountCard
-          label="Active Engagements"
-          value={showPlaceholder ? placeholder : active}
-          icon={<Clock size={32} />}
-          color="info.main"
-        />
-      </Grid>
-      <Grid size={{ xs: 12, md: 6, lg: 3 }}>
-        <GenericSubCountCard
-          label="Completed"
-          value={showPlaceholder ? placeholder : completed}
-          icon={<CircleCheck size={32} />}
-          color="success.main"
-        />
-      </Grid>
-      <Grid size={{ xs: 12, md: 6, lg: 3 }}>
-        <GenericSubCountCard
-          label="On Hold"
-          value={showPlaceholder ? placeholder : onHold}
-          icon={<CircleAlert size={32} />}
-          color="warning.main"
-        />
-      </Grid>
-    </Grid>
+    <SupportStatGrid<EngagementsStatKey>
+      isLoading={isLoading}
+      configs={configs}
+      stats={flattened}
+      isError={isError}
+      entityName="engagement statistics"
+      itemSize={{ xs: 12, sm: 6, md: 3 }}
+    />
   );
 }
-

@@ -684,6 +684,20 @@ describe("support utils", () => {
       expect(result).toContain("https://cdn.example.com/att.png");
     });
 
+    it("should preserve absolute .iix src even when matching attachment exists", () => {
+      const html =
+        '<img src="https://wso2sndev.wso2.com/att456.iix" alt="inline">';
+      const attachments = [
+        {
+          id: "att456",
+          downloadUrl: "https://wso2sndev.wso2.com/sys_attachment.do?sys_id=att456",
+        },
+      ];
+      const result = replaceInlineImageSources(html, attachments);
+      expect(result).toContain("https://wso2sndev.wso2.com/att456.iix");
+      expect(result).not.toContain("sys_attachment.do");
+    });
+
     it("should handle single-quoted src", () => {
       const html = "<img src='/sys99.iix' alt=''>";
       const attachments = [
