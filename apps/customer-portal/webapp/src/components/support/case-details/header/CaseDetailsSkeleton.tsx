@@ -20,6 +20,7 @@ import type { JSX } from "react";
 export interface CaseDetailsSkeletonProps {
   /** When true, hides the action row (manage status section). */
   hideActionRow?: boolean;
+  showEngineerOnly?: boolean;
 }
 
 /**

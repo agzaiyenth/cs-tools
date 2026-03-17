@@ -84,6 +84,7 @@ export interface CaseDetailsActionRowProps {
   /** Case ID for PATCH case state. */
   caseId?: string;
   isLoading?: boolean;
+  showOnlyEngineer?: boolean;
 }
 
 /**
