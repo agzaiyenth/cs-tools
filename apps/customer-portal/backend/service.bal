@@ -26,6 +26,8 @@ import customer_portal.user_management;
 import ballerina/cache;
 import ballerina/http;
 import ballerina/log;
+import ballerina/time;
+import ballerina/websocket;
 
 final cache:Cache userCache = new ({
     capacity: 500,
@@ -58,6 +60,8 @@ service class ErrorInterceptor {
 }
 
 // TODO: Remove after the ballerina header configs setting through choreo issue is fixed
+configurable int wsPort = 9091;
+
 http:ListenerConfiguration listenerConf = {
     requestLimits: {
         maxHeaderSize: 16384
@@ -4314,5 +4318,90 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
         return response;
+    }
+}
+
+# WebSocket service to proxy messages between the browser and the upstream Python AI chat agent for real-time communication in chat sessions.
+isolated service / on new websocket:Listener(wsPort) {
+
+    # Upgrade an HTTP request to WebSocket for a given chat session.
+    #
+    # + sessionId - Conversation/session ID to route to the upstream Python agent
+    # + return - WebSocket service or upgrade error
+    isolated resource function get [string sessionId]() returns websocket:Service|websocket:UpgradeError {
+        log:printInfo(string `Upgrading to WebSocket for session ID: ${sessionId}`);
+        return new WsProxyService(sessionId);
+    }
+}
+
+# AI chat agent related service functions that interact with the upstream AI chat agent through the client module.
+isolated service class WsProxyService {
+    *websocket:Service;
+    private final string sessionId;
+    private boolean streaming = false;
+
+    isolated function init(string sessionId) {
+        self.sessionId = sessionId;
+    }
+
+    # Handles incoming WebSocket text messages from the browser client.
+    # Responds to ping messages, enforces single-stream concurrency, and proxies
+    # user messages to the upstream AI chat agent via the ai_chat_agent module.
+    #
+    # + caller - The WebSocket caller representing the connected browser client
+    # + data - Raw text message received from the client
+    # + return - Error if message handling or forwarding fails
+    remote function onMessage(websocket:Caller caller, string data) returns error? {
+        json|error parsed = data.fromJsonString();
+        boolean isPing = data.trim().toLowerAscii() == "ping"
+            || (parsed is map<json> && (parsed["type"] ?: "").toString() == "ping");
+        if isPing {
+            var [epochSecs, fracSecs] = time:utcNow();
+            decimal ts = <decimal>epochSecs + fracSecs;
+            check caller->writeTextMessage(string `{"type":"pong","ts":${ts}}`);
+            return;
+        }
+        boolean alreadyStreaming;
+        lock {
+            alreadyStreaming = self.streaming;
+            if !alreadyStreaming {
+                self.streaming = true;
+            }
+        }
+        if alreadyStreaming {
+            json busyPayload = {"type": "error", "message": "A response is already being streamed. Please wait."};
+            check caller->writeTextMessage(busyPayload.toJsonString());
+            return;
+        }
+        error? err = ai_chat_agent:streamChat(self.sessionId, data, caller);
+        lock {
+            self.streaming = false;
+        }
+        if err is error {
+            log:printError("WebSocket proxy stream error", err);
+            json errorPayload = {"type": "error", "message": err.message()};
+            error? writeErr = caller->writeTextMessage(errorPayload.toJsonString());
+            if writeErr is error {
+                log:printError("Failed to send error to caller (client disconnected)", writeErr);
+            }
+        }
+    }
+
+    # Handles WebSocket connection errors on the proxy link.
+    #
+    # + caller - The WebSocket caller representing the connected browser client
+    # + err - The error that occurred on the connection
+    # + return - Error if error handling itself fails
+    remote function onError(websocket:Caller caller, error err) returns error? {
+        log:printError("WebSocket proxy connection error", err);
+    }
+
+    # Handles WebSocket connection closure events.
+    #
+    # + caller - The WebSocket caller representing the connected browser client
+    # + statusCode - WebSocket close status code
+    # + reason - Reason string for the closure
+    remote function onClose(websocket:Caller caller, int statusCode, string reason) {
+        log:printInfo(string `WebSocket proxy closed [${statusCode}]: ${reason}`);
     }
 }
