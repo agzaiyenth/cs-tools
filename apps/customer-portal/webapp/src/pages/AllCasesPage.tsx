@@ -117,6 +117,7 @@ export default function AllCasesPage(): JSX.Element {
     isError: isCasesError,
     hasNextPage,
     fetchNextPage,
+    isFetchingNextPage,
   } = useGetProjectCases(projectId || "", caseSearchRequest, {
     enabled: !!projectId,
   });
@@ -141,35 +142,35 @@ export default function AllCasesPage(): JSX.Element {
     hideLoader();
   }, [isInitialPageLoading, showLoader, hideLoader]);
 
-  // Background-load all remaining pages so search/filters work on full dataset.
   useEffect(() => {
-    if (!data || !hasNextPage) {
-      return;
+    if (!data) return;
+    const loadedPages = data.pages.length;
+    if (page > loadedPages && hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
     }
+  }, [page, data, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-    void fetchNextPage();
-  }, [data, hasNextPage, fetchNextPage]);
+  const currentPageCases = useMemo(() => {
+    if (!data || data.pages.length === 0) return [];
+    const pageIndex = Math.max(0, Math.min(page - 1, data.pages.length - 1));
+    return data.pages[pageIndex]?.cases ?? [];
+  }, [data, page]);
 
-  const rawCases = useMemo(
-    () => data?.pages.flatMap((page) => page.cases) ?? [],
-    [data],
-  );
   const apiTotalRecords = data?.pages?.[0]?.totalRecords ?? 0;
 
   const filteredAndSearchedCases = useMemo(
-    () => (excludeS0 ? rawCases.filter((c) => !isS0Case(c)) : rawCases),
-    [rawCases, excludeS0],
+    () =>
+      excludeS0
+        ? currentPageCases.filter((c) => !isS0Case(c))
+        : currentPageCases,
+    [currentPageCases, excludeS0],
   );
 
   const totalItems = excludeS0
     ? filteredAndSearchedCases.length
     : apiTotalRecords || filteredAndSearchedCases.length;
 
-  // Pagination logic
-  const paginatedCases = useMemo(() => {
-    const startIndex = (page - 1) * pageSize;
-    return filteredAndSearchedCases.slice(startIndex, startIndex + pageSize);
-  }, [filteredAndSearchedCases, page]);
+  const paginatedCases = filteredAndSearchedCases;
 
   const totalPages = Math.ceil(totalItems / pageSize);
 
