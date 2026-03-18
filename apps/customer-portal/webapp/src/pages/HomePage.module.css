@@ -151,9 +151,10 @@
 
 /* ── CTA Card ── */
 .ctaCard {
-  background: #1a1a2e;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
+  background-color: #fff;
+  box-shadow: 1px 3px 17px 10px #eaeaeaab;
+  border-radius: 10px;
+  border: 2px solid transparent;
   padding: 48px 40px;
   display: flex;
   flex-direction: column;
@@ -175,11 +176,11 @@
 
 .ctaCardTitle {
   font-weight: 700 !important;
-  color: #ffffff !important;
+  color: var(--color-text-primary) !important;
 }
 
 .ctaCardDesc {
-  color: #d9d9d9 !important;
+  color: var(--color-text-secondary) !important;
   line-height: 1.6 !important;
   max-width: 320px;
 }

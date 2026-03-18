@@ -189,7 +189,7 @@ export default function HomePage(): JSX.Element {
               Speed-to-Market, Value, and Confidence Through Innovation
             </Typography>
             <Typography variant="body1" className={styles.featuresSubtitle}>
-              WSO2 Support delivers enterprise-grade assistance that keeps your business running smoothly and efficiently.
+             WSO2 Support delivers enterprise-grade assistance that keeps your business running smoothly and efficiently.
             </Typography>
             <Stack spacing={3} sx={{ mt: 4 }}>
               {featureItems.map((item) => (
@@ -243,7 +243,7 @@ export default function HomePage(): JSX.Element {
                 href="https://wso2.com/contact"
                 target="_blank"
                 rel="noopener noreferrer"
-                sx={{ textTransform: "none", fontWeight: 600, fontSize: "1rem", paddingY: 1.5, borderRadius: "50px", borderColor: "rgba(255,255,255,0.2)", color: "#ffffff", "&:hover": { borderColor: "#ff6700", color: "#ff6700", backgroundColor: "rgba(255,103,0,0.08)" } }}
+                sx={{ textTransform: "none", fontWeight: 600, fontSize: "1rem", paddingY: 1.5, borderRadius: "50px", "&:hover": { backgroundColor: "rgba(255,103,0,0.08)" } }}
               >
                 Contact Us
               </Button>
