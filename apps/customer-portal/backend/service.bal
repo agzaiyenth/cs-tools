@@ -135,6 +135,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
         string? phoneNumber = ();
+        string? lastPasswordUpdateTime = ();
         scim:User[]|error userResults = scim:searchUsers(userInfo.email);
         if userResults is error {
             // Log the error and return nil
@@ -144,6 +145,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
                 log:printError(string `No user found while searching phone number for user: ${userInfo.userId}`);
             } else {
                 phoneNumber = scim:processPhoneNumber(userResults[0]);
+                lastPasswordUpdateTime = scim:processLastPasswordUpdateTime(userResults[0]);
             }
         }
 
@@ -154,7 +156,8 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             lastName: userDetails.lastName,
             timeZone: userDetails.timeZone,
             roles: userDetails.roles,
-            phoneNumber
+            phoneNumber,
+            lastPasswordUpdateTime
         };
 
         error? cacheError = userCache.put(cacheKey, user);
