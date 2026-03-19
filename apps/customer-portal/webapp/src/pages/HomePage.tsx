@@ -15,13 +15,14 @@
 // under the License.
 
 import { Box, Button, Stack, Typography, Grid, Card } from "@wso2/oxygen-ui";
-import { type JSX } from "react";
+import { useState, type JSX } from "react";
 import { Header as HeaderUI } from "@wso2/oxygen-ui";
 import Brand from "@components/common/header/Brand";
 import Actions from "@components/common/header/Actions";
 import Footer from "@components/common/footer/Footer";
 import styles from "./HomePage.module.css";
 import { useAsgardeo } from "@asgardeo/react";
+import { useLogger } from "@/hooks/useLogger";
 
 const ArrowIcon = (): JSX.Element => (
   <svg
@@ -61,9 +62,18 @@ const featureItems = [
 
 export default function HomePage(): JSX.Element {
   const { signIn } = useAsgardeo();
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const logger = useLogger();
 
   const handleLogin = async () => {
-    await signIn();
+    if (isSigningIn) return;
+    setIsSigningIn(true);
+    try {
+      await signIn();
+    } catch (error) {
+      logger.error("Sign-in failed:", error);
+      setIsSigningIn(false);
+    }
   };
   return (
     <Box className={styles.pageWrapper}>
