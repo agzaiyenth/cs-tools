@@ -1432,6 +1432,54 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
         };
     }
 
+    # Get Conversation summary for a project.
+    # 
+    # + projectId - ID of the project
+    # + conversationId - ID of the conversation
+    # + return - Conversation summary or error
+    resource function get projects/[entity:IdString projectId]/summary/[entity:IdString conversationId](http:RequestContext ctx)
+        returns ai_chat_agent:ConversationSummaryResponse|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
+
+        authorization:UserInfoPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_MSG_USER_INFO_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        ai_chat_agent:ConversationSummaryResponse|error summaryResponse = ai_chat_agent:getSummary(projectId, conversationId);
+        if summaryResponse is error {
+            if getStatusCode(summaryResponse) == http:STATUS_UNAUTHORIZED {
+                log:printWarn(string `User: ${userInfo.userId} is not authorized to access the customer portal!`);
+                return <http:Unauthorized>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_ACCESS
+                    }
+                };
+            }
+            if getStatusCode(summaryResponse) == http:STATUS_FORBIDDEN {
+                log:printWarn(string `User: ${userInfo.userId} is forbidden to access conversation summary for conversation ID: ${
+                        conversationId}`);
+                return <http:Forbidden>{
+                    body: {
+                        message: "You're not authorized to access the summary for the requested conversation."
+                    }
+                };
+            }
+
+            string customError = "Failed to retrieve conversation summary.";
+            log:printError(customError, summaryResponse);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return summaryResponse;
+    }
     # Add a message to an existing conversation and get response using AI chat agent.
     #
     # + projectId - ID of the project
