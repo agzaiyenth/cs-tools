@@ -23,7 +23,7 @@ configurable TokenValidatorConfig tokenValidatorConfig = ?;
 final jwt:ValidatorConfig & readonly jwtConfig = {
     issuer: tokenValidatorConfig.issuer,
     audience: tokenValidatorConfig.audience,
-    clockSkew: 60,
+    clockSkew: tokenValidatorConfig.clockSkew,
     signatureConfig: {
         jwksConfig: {url: tokenValidatorConfig.jwksEndPoint}
     }
@@ -35,7 +35,7 @@ public isolated service class JwtInterceptor {
     *http:RequestInterceptor;
 
     isolated resource function default [string... path](http:RequestContext ctx, http:Request req)
-        returns http:NextService|http:Unauthorized|http:Forbidden|http:InternalServerError|error? {
+        returns http:NextService|http:Unauthorized|http:InternalServerError|error? {
 
         string|error idToken = req.getHeader(JWT_ASSERTION_HEADER);
         if idToken is error {
@@ -67,15 +67,7 @@ public isolated service class JwtInterceptor {
             return <http:Unauthorized>{body: {message: errorMsg}};
         }
 
-        [jwt:Header, jwt:Payload]|jwt:Error result = jwt:decode(idToken);
-        if result is jwt:Error {
-            string errorMsg = "Error while reading the Invoker info!";
-            log:printError(errorMsg, result);
-            return <http:InternalServerError>{body: {message: errorMsg}};
-        }
-
-        jwt:Payload jwtPayload = result[1];
-        CustomJwtPayload|error payloadData = jwtPayload.cloneWithType(CustomJwtPayload);
+        CustomJwtPayload|error payloadData = payload.cloneWithType(CustomJwtPayload);
         if payloadData is error {
             string errorMsg = "Malformed JWT payload!";
             log:printError(errorMsg, payloadData);

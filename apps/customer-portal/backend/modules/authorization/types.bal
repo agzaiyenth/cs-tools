@@ -22,6 +22,8 @@ public type TokenValidatorConfig record {|
     string audience;
     # JWKS EndPoint 
     string jwksEndPoint;
+    # Clock skew
+    decimal clockSkew;
 |};
 
 # JWT payload data structure from decoded token.
