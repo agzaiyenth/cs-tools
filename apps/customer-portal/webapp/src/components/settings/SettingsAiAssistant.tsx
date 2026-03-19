@@ -29,6 +29,7 @@ import { Bot, CircleAlert, Sparkles } from "@wso2/oxygen-ui-icons-react";
 import { useCallback, useState, useEffect, type JSX } from "react";
 import useGetProjectDetails from "@api/useGetProjectDetails";
 import { usePatchProject } from "@api/usePatchProject";
+import { setNoveraChatEnabled } from "@utils/settingsStorage";
 
 interface SettingsAiAssistantProps {
   projectId: string;
@@ -59,16 +60,27 @@ export default function SettingsAiAssistant({
 
   useEffect(() => {
     if (projectDetails?.account?.hasAgent !== undefined) {
-      setNoveraEnabledState(projectDetails.account.hasAgent);
+      const enabled = projectDetails.account.hasAgent;
+      setNoveraEnabledState(enabled);
+      setNoveraChatEnabled(enabled);
     }
   }, [projectDetails?.account?.hasAgent]);
 
   const handleNoveraToggle = useCallback(
     (checked: boolean) => {
+      const previous = noveraEnabled;
       setNoveraEnabledState(checked);
-      patchProject.mutate({ hasAgent: checked });
+      setNoveraChatEnabled(checked);
+      patchProject.mutate(
+        { hasAgent: checked },
+        {onError: () => {
+            setNoveraEnabledState(previous);
+            setNoveraChatEnabled(previous);
+          },
+        },
+      );
     },
-    [patchProject],
+    [noveraEnabled, patchProject],
   );
 
   const handleKbToggle = useCallback((checked: boolean) => {
