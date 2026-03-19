@@ -36,13 +36,11 @@ const OUTSTANDING_STATUS_IDS = [1, 10, 18, 1003, 1006] as const;
 interface CasesTableProps {
   projectId: string;
   excludeS0?: boolean;
-  hasAgent?: boolean;
 }
 
 const CasesTable = ({
   projectId,
   excludeS0 = false,
-  hasAgent = false,
 }: CasesTableProps): JSX.Element => {
   const navigate = useNavigate();
   const { isLoading: isAuthLoading } = useAsgardeo();
@@ -79,9 +77,9 @@ const CasesTable = ({
                     (item: { label: string }) =>
                       !isS0SeverityLabel(item.label),
                   )
-                : def.metadataKey === "caseStates" || def.metadataKey === "statuses"
+                : def.metadataKey === "caseStates"
                 ? (metadataOptions as any[]).filter(
-                    (s) => s.label?.toLowerCase() !== "Closed"
+                    (s) => s.label?.toLowerCase()?.trim() !== "closed"
                   )
                 : metadataOptions;
             return filtered.map((item: { label: string; id: string }) => ({
@@ -236,7 +234,6 @@ const CasesTable = ({
             setIsFilterOpen(!isFilterOpen);
           }
         }}
-        hasAgent={hasAgent}
       />
 
       {/* Filter dropdowns section */}
