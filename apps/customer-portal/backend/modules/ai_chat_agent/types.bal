@@ -280,7 +280,7 @@ public type RecommendationRequest record {|
 |};
 
 # Conversation summary information.
-public type ConversationSummaryResponse record {
+public type ConversationSummaryResponse record {|
     # Account ID
     string accountId;
     # Conversation ID
@@ -291,4 +291,5 @@ public type ConversationSummaryResponse record {
     int troubleshootingAttempts;
     # Number of KB articles reviewed in the conversation
     int kbArticlesReviewed;
-};
+    json...;
+|};
