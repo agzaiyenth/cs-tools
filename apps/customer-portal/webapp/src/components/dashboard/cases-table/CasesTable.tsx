@@ -58,13 +58,6 @@ const CasesTable = ({
   // Fetch deployments for the deployment filter
   const { data: deploymentsData } = useGetDeployments(projectId);
 
-  const severityOptions = (filtersMetadata?.severities ?? [])
-    .filter((s) => !excludeS0 || !isS0SeverityLabel(s.label))
-    .map((s) => ({
-      label: mapSeverityToDisplay(s.label),
-      value: s.id,
-    }));
-
   const dynamicFilterFields: FilterField[] = useMemo(() => {
     return ALL_CASES_FILTER_DEFINITIONS.map((def) => {
       const { label } = deriveFilterLabels(def.id);
@@ -112,8 +105,8 @@ const CasesTable = ({
       filters: {
         statusIds: filters.statusId ? [Number(filters.statusId)] : [...OUTSTANDING_STATUS_IDS],
         caseTypes: filters.caseTypeId ? [filters.caseTypeId] : [CaseType.DEFAULT_CASE],
-        severityId: filters.severityId ? [Number(filters.severityId)] : undefined,
-        issueId: filters.issueTypes ? [Number(filters.issueTypes)] : undefined,
+        severityId: filters.severityId ? Number(filters.severityId) : undefined,
+        issueId: filters.issueTypes ? Number(filters.issueTypes) : undefined,
         deploymentId: filters.deploymentId || undefined,
       },
       sortBy: {
