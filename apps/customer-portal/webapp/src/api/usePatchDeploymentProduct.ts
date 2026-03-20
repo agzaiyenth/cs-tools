@@ -59,7 +59,7 @@ export function usePatchDeploymentProduct(): UseMutationResult<
           productId,
           cores: body.cores,
           tps: body.tps,
-          updates: body.updates,
+          updatesCount: body.updates?.length,
         });
 
         if (!isSignedIn || isAuthLoading) {

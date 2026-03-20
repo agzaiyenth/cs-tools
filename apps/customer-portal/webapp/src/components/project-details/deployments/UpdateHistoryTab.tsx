@@ -27,7 +27,6 @@ import {
 import { SquarePen, Trash2 } from "@wso2/oxygen-ui-icons-react";
 import {
   useCallback,
-  useEffect,
   useMemo,
   useState,
   type ChangeEvent,
@@ -43,6 +42,7 @@ export interface UpdateHistoryTabProps {
   productVersion: string;
   isLoading?: boolean;
   onSaveUpdates: (updates: ProductUpdate[]) => Promise<void>;
+  onClose: () => void;
 }
 
 interface UpdateFormData {
@@ -69,16 +69,20 @@ export default function UpdateHistoryTab({
   productVersion,
   isLoading,
   onSaveUpdates,
+  onClose,
 }: UpdateHistoryTabProps): JSX.Element {
   const [form, setForm] = useState<UpdateFormData>(INITIAL_FORM);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const { data: recommendedUpdateLevels = [], isLoading: isLoadingRecommended } =
-    useGetRecommendedUpdateLevels();
+  const { data: recommendedUpdateLevels = [] } = useGetRecommendedUpdateLevels();
 
   const matchedRecommendation = useMemo(() => {
-    if (!productName || !productVersion || recommendedUpdateLevels.length === 0) {
+    if (
+      !productName ||
+      !productVersion ||
+      recommendedUpdateLevels.length === 0
+    ) {
       return null;
     }
 
@@ -102,10 +106,8 @@ export default function UpdateHistoryTab({
     };
   }, [productName, productVersion, matchedRecommendation]);
 
-  const {
-    data: updateLevelsData,
-    isLoading: isLoadingUpdateLevels,
-  } = usePostUpdateLevelsSearch(searchParams);
+  const { data: updateLevelsData, isLoading: isLoadingUpdateLevels } =
+    usePostUpdateLevelsSearch(searchParams);
 
   const availableUpdateLevels = useMemo(() => {
     if (!updateLevelsData) return [];
@@ -149,14 +151,16 @@ export default function UpdateHistoryTab({
   const handleFormChange =
     (field: keyof UpdateFormData) => (e: ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
-      setForm((prev) => ({ ...prev, [field]: value }));
-
-      if (field === "updateLevel" && value) {
-        const description = getUpdateDescription(parseInt(value, 10));
-        if (description && !prev.details) {
-          setForm((p) => ({ ...p, details: description }));
+      setForm((prev) => {
+        const next = { ...prev, [field]: value };
+        if (field === "updateLevel" && value && !prev.details) {
+          const description = getUpdateDescription(parseInt(value, 10));
+          if (description) {
+            next.details = description;
+          }
         }
-      }
+        return next;
+      });
     };
 
   const handleAddUpdate = useCallback(async () => {
@@ -180,13 +184,21 @@ export default function UpdateHistoryTab({
     }
   }, [form, updates, onSaveUpdates]);
 
-  const handleEditClick = useCallback((index: number) => {
-    setEditingIndex(index);
-  }, []);
+  const handleEditClick = useCallback(
+    (update: ProductUpdate) => {
+      const index = updates.findIndex(
+        (u) => u.updateLevel === update.updateLevel && u.date === update.date,
+      );
+      setEditingIndex(index);
+    },
+    [updates],
+  );
 
   const handleDeleteUpdate = useCallback(
-    async (index: number) => {
-      const newUpdates = updates.filter((_, i) => i !== index);
+    async (update: ProductUpdate) => {
+      const newUpdates = updates.filter(
+        (u) => !(u.updateLevel === update.updateLevel && u.date === update.date),
+      );
       setIsSaving(true);
       try {
         await onSaveUpdates(newUpdates);
@@ -198,7 +210,14 @@ export default function UpdateHistoryTab({
   );
 
   const handleSaveEdit = useCallback(
-    async (index: number, editedUpdate: ProductUpdate) => {
+    async (originalUpdate: ProductUpdate, editedUpdate: ProductUpdate) => {
+      const index = updates.findIndex(
+        (u) =>
+          u.updateLevel === originalUpdate.updateLevel &&
+          u.date === originalUpdate.date,
+      );
+      if (index === -1) return;
+
       const newUpdates = [...updates];
       newUpdates[index] = editedUpdate;
       setIsSaving(true);
@@ -214,6 +233,11 @@ export default function UpdateHistoryTab({
 
   const formatDate = (dateStr: string): string => {
     try {
+      const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (match) {
+        const [, year, month, day] = match;
+        return `${day}/${month}/${year}`;
+      }
       const date = new Date(dateStr);
       return date.toLocaleDateString("en-GB", {
         day: "2-digit",
@@ -287,21 +311,27 @@ export default function UpdateHistoryTab({
               }}
             />
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {sortedUpdates.map((update, index) => (
-                <TimelineItem
-                  key={index}
-                  update={update}
-                  isEditing={editingIndex === index}
-                  onEdit={() => handleEditClick(index)}
-                  onDelete={() => handleDeleteUpdate(index)}
-                  onSave={(edited) => handleSaveEdit(index, edited)}
-                  onCancelEdit={() => setEditingIndex(null)}
-                  formatDate={formatDate}
-                  isSaving={isSaving}
-                  availableUpdateLevels={availableUpdateLevels}
-                  isLoadingUpdateLevels={isLoadingUpdateLevels}
-                />
-              ))}
+              {sortedUpdates.map((update) => {
+                const originalIndex = updates.findIndex(
+                  (u) =>
+                    u.updateLevel === update.updateLevel && u.date === update.date,
+                );
+                return (
+                  <TimelineItem
+                    key={`${update.updateLevel}-${update.date}`}
+                    update={update}
+                    isEditing={editingIndex === originalIndex}
+                    onEdit={() => handleEditClick(update)}
+                    onDelete={() => handleDeleteUpdate(update)}
+                    onSave={(edited) => handleSaveEdit(update, edited)}
+                    onCancelEdit={() => setEditingIndex(null)}
+                    formatDate={formatDate}
+                    isSaving={isSaving}
+                    availableUpdateLevels={availableUpdateLevels}
+                    isLoadingUpdateLevels={isLoadingUpdateLevels}
+                  />
+                );
+              })}
             </Box>
           </Box>
         )}
@@ -388,7 +418,8 @@ export default function UpdateHistoryTab({
             }}
           >
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              Recommended Update Level: U{matchedRecommendation.recommendedUpdateLevel}
+              Recommended Update Level: U
+              {matchedRecommendation.recommendedUpdateLevel}
               {matchedRecommendation.availableUpdatesCount > 0 &&
                 ` (${matchedRecommendation.availableUpdatesCount} updates available)`}
             </Typography>
@@ -404,13 +435,11 @@ export default function UpdateHistoryTab({
         >
           <Button
             variant="outlined"
-            onClick={() => {
-              setForm(INITIAL_FORM);
-            }}
+            onClick={onClose}
             disabled={isSaving}
             sx={{ minWidth: 100 }}
           >
-            Clear
+            Close
           </Button>
           <Button
             variant="contained"
@@ -639,6 +668,7 @@ function TimelineItem({
                     size="small"
                     onClick={onEdit}
                     disabled={isSaving}
+                    aria-label={`Edit update U${update.updateLevel}`}
                     sx={{
                       color: "grey.300",
                       "&:hover": {
@@ -658,6 +688,7 @@ function TimelineItem({
                 size="small"
                 onClick={onDelete}
                 disabled={isSaving}
+                aria-label={`Delete update U${update.updateLevel}`}
                 sx={{
                   color: "grey.300",
                   "&:hover": {

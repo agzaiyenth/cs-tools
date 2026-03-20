@@ -179,11 +179,17 @@ export default function ManageProductModal({
     async (updates: ProductUpdate[]) => {
       if (!product?.id) return;
 
+      const normalizedUpdates = updates.map((update) => ({
+        updateLevel: update.updateLevel,
+        date: update.date,
+        details: update.details === null ? undefined : update.details,
+      }));
+
       try {
         await patchProduct.mutateAsync({
           deploymentId,
           productId: product.id,
-          body: { updates },
+          body: { updates: normalizedUpdates },
         });
         onSuccess?.();
       } catch (error) {
@@ -302,6 +308,7 @@ export default function ManageProductModal({
             }
             isLoading={false}
             onSaveUpdates={handleSaveUpdates}
+            onClose={handleClose}
           />
         )}
       </DialogContent>
