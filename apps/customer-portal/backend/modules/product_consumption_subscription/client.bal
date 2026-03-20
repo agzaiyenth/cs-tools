@@ -24,7 +24,18 @@ configurable ClientAuthConfig clientAuthConfig = ?;
 }
 final http:Client productConsumptionClient = check new (productConsumptionBaseUrl, {
     auth: {...clientAuthConfig},
-    http1Settings: {
-        keepAlive: http:KEEPALIVE_NEVER
+    httpVersion: http:HTTP_1_1,
+    http1Settings: {keepAlive: http:KEEPALIVE_NEVER},
+    timeout: 300.0,
+    retryConfig: {
+        count: 3,
+        interval: 2.0,
+        statusCodes: [
+            http:STATUS_INTERNAL_SERVER_ERROR,
+            http:STATUS_REQUEST_TIMEOUT,
+            http:STATUS_BAD_GATEWAY,
+            http:STATUS_SERVICE_UNAVAILABLE,
+            http:STATUS_GATEWAY_TIMEOUT
+        ]
     }
 });
