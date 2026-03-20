@@ -120,6 +120,7 @@ public type LicenseResult record {|
 public type LicenseResponse record {|
     # Result object
     LicenseResult result;
+    json...;
 |};
 
 # Project status response structure.
