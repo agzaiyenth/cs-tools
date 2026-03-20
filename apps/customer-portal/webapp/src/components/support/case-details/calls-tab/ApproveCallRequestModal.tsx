@@ -36,7 +36,6 @@ import {
 } from "react";
 import { usePatchCallRequest } from "@api/usePatchCallRequest";
 import type { CallRequest } from "@models/responses";
-import { CALL_REQUEST_STATE_PENDING_ON_WSO2 } from "@constants/supportConstants";
 
 export interface ApproveCallRequestModalProps {
   open: boolean;
@@ -46,7 +45,6 @@ export interface ApproveCallRequestModalProps {
   onClose: () => void;
   onSuccess?: () => void;
   onError?: (message: string) => void;
-  /** IANA timezone string from the user's profile (e.g. "America/New_York"). */
   userTimeZone?: string;
   /**
    * The stateKey to send when approving. Resolved from project filters (Pending on WSO2 state).
@@ -117,7 +115,7 @@ export default function ApproveCallRequestModal({
   }, [open]);
 
   const minDatetimeLocal = getMinDatetimeLocal();
-  const isValid = preferredDateTime.trim() !== "";
+  const isValid = preferredDateTime.trim() !== "" && approveStateKey !== undefined;
   const isPending = patchCallRequest.isPending;
 
   const handleDialogClose = useCallback(
@@ -141,7 +139,7 @@ export default function ApproveCallRequestModal({
   );
 
   const handleSubmit = useCallback(() => {
-    if (!isValid || !call) return;
+    if (!isValid || !call || approveStateKey === undefined) return;
     setModalError(null);
 
     const selected = new Date(preferredDateTime);
@@ -160,7 +158,7 @@ export default function ApproveCallRequestModal({
     patchCallRequest.mutate(
       {
         callRequestId: call.id,
-        stateKey: approveStateKey ?? CALL_REQUEST_STATE_PENDING_ON_WSO2,
+        stateKey: approveStateKey,
         utcTimes: [localToUtcIso(preferredDateTime)],
       },
       {
