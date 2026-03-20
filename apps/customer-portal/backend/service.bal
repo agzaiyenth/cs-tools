@@ -17,12 +17,12 @@
 import customer_portal.ai_chat_agent;
 import customer_portal.authorization;
 import customer_portal.entity;
+import customer_portal.product_consumption_subscription;
 import customer_portal.registry;
 import customer_portal.scim;
 import customer_portal.types;
 import customer_portal.updates;
 import customer_portal.user_management;
-import customer_portal.product_consumption_subscription;
 
 import ballerina/cache;
 import ballerina/http;
@@ -4090,7 +4090,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
             };
         }
 
-        registry:TokenDescriptionInfo|error tokenInformation 
+        registry:TokenDescriptionInfo|error tokenInformation
             = registry:deriveTokenInfoFromDescription(token.description);
         if tokenInformation is error {
             log:printError("Failed to derive token information.", tokenInformation);
@@ -4253,7 +4253,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     # + payload - Project status request containing email
     # + return - Change request details object or Error
     isolated resource function post projects/[string projectId]/deployments/[string deploymentId]/license
-        (product_consumption_subscription:DownloadLicensePayload payload, http:RequestContext ctx)
+            (product_consumption_subscription:DownloadLicensePayload payload, http:RequestContext ctx)
         returns product_consumption_subscription:License|http:InternalServerError|http:Unauthorized|http:Forbidden|
         http:NotFound {
 
@@ -4314,6 +4314,5 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
         }
         return licenseResponse;
     }
-
 
 }

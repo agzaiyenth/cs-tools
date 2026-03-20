@@ -31,7 +31,7 @@ public type Result record {|
     # ServiceNow system identifier
     string sys_id?;
     # Choreo application ID
-    string applicationId?; 
+    string applicationId?;
     # Status data
     Data result;
 |};

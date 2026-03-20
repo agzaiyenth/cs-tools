@@ -22,7 +22,7 @@ public isolated function downloadLicense(LicenseDownloadPayload payload) returns
     // 1. Get current status
     Result statusRes =
         check productConsumptionClient->/projects/[payload.projectId]/consumption/status
-            .post({email: payload.email, deploymentId: payload.deploymentId});
+.post({email: payload.email, deploymentId: payload.deploymentId});
 
     int status = statusRes.result.status;
     string? applicationId = statusRes.result.applicationId;
@@ -30,68 +30,67 @@ public isolated function downloadLicense(LicenseDownloadPayload payload) returns
     string? applicationDescription = statusRes.result.description;
 
     // CREATE APPLICATION
-    if status == 1  {
+    if status == STATUS_PENDING {
         if applicationName is () || applicationDescription is () {
             return error("Application name and description are required for application creation.");
         }
         ApplicationCreateResponse app =
-            check productConsumptionClient->/applications
-                .post({name: applicationName, description: applicationDescription});
+            check productConsumptionClient->/applications.post({name: applicationName, description: applicationDescription});
 
         applicationId = app.applicationId;
 
-        Result _ = check productConsumptionClient->/projects/[payload.projectId].patch({status: 2, applicationId});
+        Result _ = check productConsumptionClient->/projects/[payload.projectId].patch({status: STATUS_CREATED, applicationId});
 
-        status = 2;
+        status = STATUS_CREATED;
     }
     if applicationId is () {
         return error("Application ID is required.");
     }
 
-    if status == 2 {
+    if status == STATUS_CREATED {
         ApplicationSubscriptionResponse _ = check productConsumptionClient->/applications/[applicationId]/subscribe
-            .post(<ApplicationSubscriptionPayload>{
+.post(<ApplicationSubscriptionPayload>{
             applicationId
         });
 
         Result _ = check productConsumptionClient->/projects/[payload.projectId]
-            .patch({
-                status: 3
-            });
+.patch({
+            status: STATUS_SUBSCRIBED
+        });
 
-        status = 3;
+        status = STATUS_SUBSCRIBED;
     }
 
     // GENERATE CREDENTIALS
-    if (status == 3) {
+    if (status == STATUS_SUBSCRIBED) {
         ApplicationKeyGenerationResponse creds =
             check productConsumptionClient->/applications/[applicationId]/generate\-credentials.post({});
 
-       Result _ = check productConsumptionClient->/projects/[payload.projectId].patch({
-            status: 4,
+        Result _ = check productConsumptionClient->/projects/[payload.projectId].patch({
+            status: STATUS_GENERATED_CREDENTIALS,
             consumerKey: creds.consumerKey,
             consumerSecret: creds.consumerSecret
         });
 
-        status = 4;
+        status = STATUS_GENERATED_CREDENTIALS;
     }
 
     // GENERATE SECRET KEYS
-    if status == 4 {
+    if status == STATUS_GENERATED_CREDENTIALS {
         SecretKeysResponse keys = check productConsumptionClient->/generate\-secret\-keys.post({});
 
         Result _ = check productConsumptionClient->/projects/[payload.projectId].patch({
-            status: 5,
+            status: STATUS_GENERATED_SECRET_KEYS,
             primarySecretKey: keys.primarySecretKey,
             secondarySecretKey: keys.secondarySecretKey
         });
 
-        status = 5;
+        status = STATUS_GENERATED_SECRET_KEYS;
     }
 
     // DOWNLOAD LICENSE
-    if status == 5 {
-       LicenseResponse license =
+    if status == STATUS_GENERATED_SECRET_KEYS {
+        LicenseResponse license =
         check productConsumptionClient->/projects/[payload.projectId]/deployments/[payload.deploymentId]/license.post(
             {
                 email: payload.email
