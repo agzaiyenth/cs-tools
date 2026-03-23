@@ -16,27 +16,45 @@
 
 import { type JSX, useEffect } from "react";
 import { useAsgardeo } from "@asgardeo/react";
+import { useLocation, useNavigate } from "react-router";
 import AppLayout from "@layouts/AppLayout";
+
+const POST_LOGIN_REDIRECT_KEY = "post_login_redirect";
 
 /**
  * AuthGuard renders AppLayout (header/footer) so loading state is visible
  * and Asgardeo authentication flow can be observed. Redirects to home only
  * when not signed in and auth check is complete.
  *
+ * Preserves the intended URL across the Asgardeo sign-in redirect so that
+ * deep-links (e.g. ServiceNow case links) land on the correct page after auth.
+ *
  * @returns {JSX.Element} AppLayout or redirect to home.
  */
 export default function AuthGuard(): JSX.Element {
   const { isSignedIn, isLoading: isAuthLoading, signIn } = useAsgardeo();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!isSignedIn && !isAuthLoading) {
+      const intended = location.pathname + location.search;
+      if (intended !== "/" && intended !== "/home") {
+        sessionStorage.setItem(POST_LOGIN_REDIRECT_KEY, intended);
+      }
       void signIn();
     }
-  }, [isSignedIn, isAuthLoading, signIn]);
+  }, [isSignedIn, isAuthLoading, signIn, location]);
 
-  if (!isSignedIn && !isAuthLoading) {
-    return <AppLayout />;
-  }
+  useEffect(() => {
+    if (isSignedIn) {
+      const redirect = sessionStorage.getItem(POST_LOGIN_REDIRECT_KEY);
+      if (redirect) {
+        sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
+        void navigate(redirect, { replace: true });
+      }
+    }
+  }, [isSignedIn, navigate]);
 
   return <AppLayout />;
 }
