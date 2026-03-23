@@ -48,6 +48,7 @@ import SettingsPage from "@pages/SettingsPage";
 import VulnerabilityDetailsPage from "@pages/VulnerabilityDetailsPage";
 import OperationsPage from "@pages/OperationsPage";
 import EngagementsPage from "@pages/EngagementsPage";
+import ServiceNowCaseRedirectPage from "@pages/ServiceNowCaseRedirectPage";
 
 export default function App(): JSX.Element {
   return (
@@ -61,6 +62,9 @@ export default function App(): JSX.Element {
             <Route element={<AuthGuard />}>
               {/* ProjectHub Page */}
               <Route path="/" element={<ProjectHub />} />
+
+              {/* ServiceNow deep-link redirect */}
+              <Route path="support" element={<ServiceNowCaseRedirectPage />} />
 
               {/* Project Specific Routes */}
               <Route path="projects/:projectId">
