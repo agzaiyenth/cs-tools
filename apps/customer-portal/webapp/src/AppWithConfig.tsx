@@ -68,6 +68,7 @@ export default function AppWithConfig(): JSX.Element {
       afterSignInUrl={authConfig.signInRedirectURL}
       afterSignOutUrl={authConfig.signOutRedirectURL}
       scopes={["openid", "email", "groups"]}
+      periodicTokenRefresh
       preferences={{
         theme: {
           inheritFromBranding: false,
