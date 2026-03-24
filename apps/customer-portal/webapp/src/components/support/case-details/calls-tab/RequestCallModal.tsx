@@ -44,6 +44,7 @@ import type { SelectChangeEvent } from "@wso2/oxygen-ui";
 import { usePostCallRequest } from "@api/usePostCallRequest";
 import { usePatchCallRequest } from "@api/usePatchCallRequest";
 import type { CallRequest } from "@models/responses";
+import { CALL_REQUEST_STATE_PENDING_ON_WSO2 } from "@constants/supportConstants";
 import {
   stripCustomerPrefixFromReason,
   utcToDatetimeLocal,
@@ -134,11 +135,7 @@ export default function RequestCallModal({
 
   const minDatetimeLocal = getMinDatetimeLocal();
 
-  const stateKeyFromCall =
-    editCall && editCall.state?.id != null
-      ? parseInt(String(editCall.state.id), 10)
-      : 2;
-  const stateKey = Number.isNaN(stateKeyFromCall) ? 2 : stateKeyFromCall;
+  const stateKey = CALL_REQUEST_STATE_PENDING_ON_WSO2;
 
   useEffect(() => {
     if (!open) return;
