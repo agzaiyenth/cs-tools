@@ -94,11 +94,12 @@ public isolated function getSummary(string projectId, string conversationId) ret
 # + sessionId - Conversation/session ID used to route to the upstream Python session
 # + payload - Raw JSON string (user_message) to forward to the upstream agent
 # + caller - The browser WebSocket caller to forward events back to
-# + return - Error if the upstream connection or forwarding fails
-public isolated function streamChat(string sessionId, string payload, websocket:Caller caller) returns error? {
+# + return - The final event payload as a map of JSON for further processing, or error
+public isolated function streamChat(string sessionId, string payload, websocket:Caller caller) returns map<json>|error {
     websocket:Client agentClient = check createAiChatAgentWsClient(sessionId);
     check agentClient->writeTextMessage(payload);
     boolean upstreamClosed = false;
+    map<json> finalPayload = {};
     while true {
         string|error event = agentClient->readTextMessage();
         if event is error {
@@ -124,8 +125,13 @@ public isolated function streamChat(string sessionId, string payload, websocket:
             log:printError("Failed to parse upstream event as JSON", parsed);
         }
         if parsed is map<json> {
-            string evtType = (parsed["type"] ?: "").toString();
-            if evtType == "final" || evtType == "error" {
+            string evtType = (parsed[EVENT_TYPE_KEY] ?: "").toString();
+            if evtType == EVENT_FINAL {
+                json eventPayload = parsed[EVENT_PAYLOAD_KEY] ?: parsed;
+                finalPayload = eventPayload is map<json> ? eventPayload : parsed;
+                break;
+            }
+            if evtType == EVENT_ERROR {
                 break;
             }
         }
@@ -136,4 +142,5 @@ public isolated function streamChat(string sessionId, string payload, websocket:
             log:printError("Failed to close upstream WebSocket connection", closeErr);
         }
     }
+    return finalPayload;
 }
