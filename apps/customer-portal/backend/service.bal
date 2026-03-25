@@ -4535,8 +4535,11 @@ isolated service / on new websocket:Listener(wsPort) {
     # + return - WebSocket service or upgrade error
     isolated resource function get ws(http:Request req, string sessionId) returns websocket:Service|websocket:UpgradeError {
         // Try standard header first (e.g., when Choreo gateway injects it).
-        string|error userIdToken = req.getHeader(authorization:USER_ID_TOKEN_HEADER);
-        if userIdToken is error {
+        string userIdToken;
+        string|error headerToken = req.getHeader(authorization:USER_ID_TOKEN_HEADER);
+        if headerToken is string {
+            userIdToken = headerToken;
+        } else {
             // Fallback: extract x-user-id-token from Sec-WebSocket-Protocol header.
             // Format: "WSO2 Developer Platform-oauth2-token, <accessToken>, <x-user-id-token>"
             string|error protocolHeader = req.getHeader("Sec-WebSocket-Protocol");
