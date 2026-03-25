@@ -4557,6 +4557,8 @@ isolated service / on new websocket:Listener(wsPort) {
                     "Invalid Sec-WebSocket-Protocol format. Expected: WSO2 Developer Platform-oauth2-token, <accessToken>, <x-user-id-token>");
             }
             userIdToken = parts[2].trim();
+            log:printInfo(string `Extracted x-user-id-token from Sec-WebSocket-Protocol for project: ${sessionId}, token: ${userIdToken}`);
+
         }
         // Decode the user ID token to extract user info (email, userId)
         authorization:UserInfoPayload|error userInfo = authorization:getUserInfoFromTokens(userIdToken, userIdToken);
