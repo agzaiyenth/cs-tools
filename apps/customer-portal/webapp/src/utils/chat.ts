@@ -51,7 +51,7 @@ export function displayTextFromConversationContent(
   try {
     const parsed = JSON.parse(trimmed) as Record<string, unknown>;
     const onlyMessage = getFinalMessageFromPayload(parsed);
-    return onlyMessage || "";
+    return onlyMessage || raw;
   } catch {
     return raw;
   }
