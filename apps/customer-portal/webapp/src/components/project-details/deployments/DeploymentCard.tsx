@@ -203,7 +203,8 @@ export default function DeploymentCard({
           <Button
             startIcon={<Key size={16} />}
             onClick={handleDownloadLicense}
-            disabled={downloadLicense.isPending}
+            loading={downloadLicense.isPending}
+            loadingPosition="start"
             variant="outlined"
             size="small"
             sx={{
