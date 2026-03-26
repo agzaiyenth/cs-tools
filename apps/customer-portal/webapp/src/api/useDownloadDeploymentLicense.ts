@@ -14,13 +14,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import {
-  useMutation,
-  type UseMutationResult,
-} from "@tanstack/react-query";
+import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
 import { useAuthApiClient } from "@api/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
+import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
 import type { DeploymentLicense } from "@models/responses";
 
 export interface DownloadDeploymentLicenseVariables {
@@ -43,6 +41,7 @@ export function useDownloadDeploymentLicense(): UseMutationResult<
   const logger = useLogger();
   const { isSignedIn, isLoading: isAuthLoading } = useAsgardeo();
   const authFetch = useAuthApiClient();
+  const { showError } = useErrorBanner();
 
   const downloadJsonFile = (data: DeploymentLicense, filename: string) => {
     const jsonString = JSON.stringify(data, null, 2);
@@ -55,6 +54,18 @@ export function useDownloadDeploymentLicense(): UseMutationResult<
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
+  };
+
+  const extractBackendError = (response: Response, responseText: string): string => {
+    try {
+      const jsonError = JSON.parse(responseText);
+      if (jsonError.message) {
+        return jsonError.message;
+      }
+    } catch {
+      // Response is not JSON, continue
+    }
+    return `Error downloading deployment license: ${response.status} ${response.statusText}`;
   };
 
   return useMutation<void, Error, DownloadDeploymentLicenseVariables>({
@@ -92,9 +103,8 @@ export function useDownloadDeploymentLicense(): UseMutationResult<
 
         if (!response.ok) {
           const text = await response.text();
-          throw new Error(
-            `Error downloading deployment license: ${response.status} ${response.statusText}${text ? ` - ${text}` : ""}`,
-          );
+          const errorMessage = extractBackendError(response, text);
+          throw new Error(errorMessage);
         }
 
         const licenseData: DeploymentLicense = await response.json();
@@ -109,6 +119,10 @@ export function useDownloadDeploymentLicense(): UseMutationResult<
         logger.error("[useDownloadDeploymentLicense] Error:", error);
         throw error;
       }
+    },
+    onError: (error) => {
+      const errorMessage = error instanceof Error ? error.message : "Failed to download license";
+      showError(errorMessage);
     },
   });
 }
