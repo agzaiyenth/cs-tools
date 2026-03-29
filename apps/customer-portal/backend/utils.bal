@@ -196,7 +196,9 @@ public isolated function mapCommentsResponse(entity:CommentsResponse response) r
             createdBy: comment.createdBy,
             isEscalated: comment.isEscalated,
             hasInlineAttachments: comment.hasInlineAttachments,
-            inlineAttachments: comment.inlineAttachments
+            inlineAttachments: comment.inlineAttachments,
+            createdByFirstName: comment.createdByFirstName,
+            createdByLastName: comment.createdByLastName
         };
 
     return {
@@ -891,5 +893,7 @@ public isolated function mapProjectResponse(entity:ProjectResponse response) ret
 public isolated function mapMetadataResponse(entity:MetadataResponse response) returns types:MetadataResponse {
     types:ReferenceItem[] timeZones = from entity:ChoiceListItem item in response.timeZones
         select {id: item.id.toString(), label: item.label};
-    return {timeZones, featureFlags};
+    types:ReferenceItem[] projectTypes = from entity:ReferenceTableItem item in response.projectTypes
+        select {id: item.id, label: item.name};
+    return {timeZones, projectTypes, featureFlags};
 }

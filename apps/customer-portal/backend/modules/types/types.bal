@@ -30,6 +30,8 @@ public type FeatureFlags record {|
 public type MetadataResponse record {|
     # List of available time zones
     ReferenceItem[] timeZones;
+    # List of available project types
+    ReferenceItem[] projectTypes;
     # Indicate which features are enabled
     FeatureFlags featureFlags;
 |};
@@ -499,6 +501,10 @@ public type Comment record {|
     boolean hasInlineAttachments;
     # List of inline attachments
     entity:InlineAttachment[] inlineAttachments;
+    # First name of the user who created the comment
+    string? createdByFirstName;
+    # Last name of the user who created the comment
+    string? createdByLastName;
 |};
 
 # Comments response with pagination.
