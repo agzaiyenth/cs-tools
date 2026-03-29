@@ -3214,6 +3214,8 @@ components:
       required:
       - content
       - createdBy
+      - createdByFirstName
+      - createdByLastName
       - createdOn
       - hasInlineAttachments
       - id
@@ -3248,6 +3250,14 @@ components:
           description: List of inline attachments
           items:
             $ref: '#/components/schemas/InlineAttachment'
+        createdByFirstName:
+          type: string
+          description: First name of the user who created the comment
+          nullable: true
+        createdByLastName:
+          type: string
+          description: Last name of the user who created the comment
+          nullable: true
       additionalProperties: false
       description: Comment information.
     CommentCreatePayload:
@@ -4077,12 +4087,18 @@ components:
     MetadataResponse:
       required:
       - featureFlags
+      - projectTypes
       - timeZones
       type: object
       properties:
         timeZones:
           type: array
           description: List of available time zones
+          items:
+            $ref: '#/components/schemas/ReferenceItem'
+        projectTypes:
+          type: array
+          description: List of available project types
           items:
             $ref: '#/components/schemas/ReferenceItem'
         featureFlags:
@@ -4931,6 +4947,7 @@ components:
       - asc
     StatsFilter:
       type: string
+      description: Stats filter enum
       enum:
       - me
     SubscriptionData:

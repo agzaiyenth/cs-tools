@@ -53,6 +53,8 @@ public type Pagination record {|
 public type MetadataResponse record {|
     # List of available time zones
     ChoiceListItem[] timeZones;
+    # List of available project types
+    ReferenceTableItem[] projectTypes;
     json...;
 |};
 
@@ -705,6 +707,10 @@ public type Comment record {|
     boolean hasInlineAttachments;
     # List of inline attachments
     InlineAttachment[] inlineAttachments;
+    # First name of the user who created the comment
+    string? createdByFirstName;
+    # Last name of the user who created the comment
+    string? createdByLastName;
     json...;
 |};
 
