@@ -75,7 +75,7 @@ export default function AnnouncementList({
             }}
           />
           <Typography variant="body1" color="text.secondary">
-            No announcements found, Try adjusting your filters or search query.
+            No announcements found. Try adjusting your filters or search query.
           </Typography>
         </Box>
       );
