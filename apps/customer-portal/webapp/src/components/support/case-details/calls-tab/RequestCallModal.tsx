@@ -48,26 +48,13 @@ import { usePatchCallRequest } from "@api/usePatchCallRequest";
 import type { CallRequest } from "@models/responses";
 import { CALL_REQUEST_STATE_PENDING_ON_WSO2 } from "@constants/supportConstants";
 import {
+  callRequestApiPreferredTimeToDatetimeLocal,
   callRequestPreferredTimeFromDatetimeLocal,
   computeMinScheduleDatetimeLocalForTimeZone,
   normalizeDatetimeLocalForCompare,
+  sortCallRequestPreferredTimeStringsAsc,
   stripCustomerPrefixFromReason,
-  toDatetimeLocalInTimeZoneFromApiString,
 } from "@utils/support";
-
-/** Sort preferred time strings (ISO or API) ascending for stable reschedule display. */
-function sortPreferredTimeStringsAsc(times: string[]): string[] {
-  return [...times].sort((a, b) => {
-    const ta = Date.parse(a.trim());
-    const tb = Date.parse(b.trim());
-    const aOk = !Number.isNaN(ta);
-    const bOk = !Number.isNaN(tb);
-    if (aOk && bOk && ta !== tb) return ta - tb;
-    if (aOk && !bOk) return -1;
-    if (!aOk && bOk) return 1;
-    return a.trim().localeCompare(b.trim());
-  });
-}
 
 const DURATION_OPTIONS = [
   { value: 15, label: "15 minutes" },
@@ -163,17 +150,17 @@ export default function RequestCallModal({
         : editCall.scheduleTime
           ? [editCall.scheduleTime]
           : [""];
-    const preferredUtcTimes = sortPreferredTimeStringsAsc(rawPreferred);
+    const preferredUtcTimes = sortCallRequestPreferredTimeStringsAsc(rawPreferred);
     queueMicrotask(() => {
       setForm({
         preferredDateTimesLocal: preferredUtcTimes.map((time) =>
-          toDatetimeLocalInTimeZoneFromApiString(time, userTimeZone),
+          callRequestApiPreferredTimeToDatetimeLocal(time),
         ),
         durationInMinutes: editCall.durationMin ?? 30,
         notes: stripCustomerPrefixFromReason(editCall.reason || ""),
       });
     });
-  }, [open, editCall, userTimeZone]);
+  }, [open, editCall]);
 
   useEffect(() => {
     if (!open || editCall) {
