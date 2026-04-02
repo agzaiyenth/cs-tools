@@ -63,7 +63,9 @@ export default function ChangeRequestsPage(): JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
   const { projectId } = useParams<{ projectId: string }>();
-  const basePath = location.pathname.includes("/operations/") ? "operations" : "support";
+  const basePath = location.pathname.includes("/operations/")
+    ? "operations"
+    : "support";
 
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [searchTerm, setSearchTerm] = useState("");
@@ -81,7 +83,9 @@ export default function ChangeRequestsPage(): JSX.Element {
     data: stats,
     isLoading: isStatsLoading,
     isError: isStatsError,
-  } = useGetProjectChangeRequestStats(projectId || "", { enabled: !!projectId });
+  } = useGetProjectChangeRequestStats(projectId || "", {
+    enabled: !!projectId,
+  });
 
   // Build API request (following cases listing pattern)
   const changeRequestSearchRequest = useMemo<
@@ -274,8 +278,8 @@ export default function ChangeRequestsPage(): JSX.Element {
           </Box>
           <Button
             variant="contained"
-            color="primary"
-            size="medium"
+            color="warning"
+            size="small"
             onClick={handleExportSchedule}
             startIcon={
               isExporting ? (
@@ -285,12 +289,6 @@ export default function ChangeRequestsPage(): JSX.Element {
               )
             }
             disabled={isExporting}
-            sx={{
-              bgcolor: "#ea580c",
-              "&:hover": {
-                bgcolor: "#c2410c",
-              },
-            }}
           >
             {isExporting ? "Exporting..." : "Export Schedule"}
           </Button>

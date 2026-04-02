@@ -26,7 +26,6 @@ import {
   Divider,
   alpha,
   colors,
-  Skeleton,
 } from "@wso2/oxygen-ui";
 import {
   ArrowLeft,
@@ -52,17 +51,19 @@ import useGetChangeRequestDetails from "@api/useGetChangeRequestDetails";
 import { usePatchChangeRequest } from "@api/usePatchChangeRequest";
 import ScheduledMaintenanceWindowCard from "@components/support/change-requests/ScheduledMaintenanceWindowCard";
 import ProposeNewImplementationTimeModal from "@components/support/change-requests/ProposeNewImplementationTimeModal";
-import { generateChangeRequestDetailsPdf } from "@utils/changeRequestDetailsPdf";
+import ChangeRequestDetailsLoadingSkeleton from "@components/support/change-requests/ChangeRequestDetailsLoadingSkeleton";
 import {
   buildChangeRequestWorkflowStages,
+  generateChangeRequestDetailsPdf,
   getChangeRequestDecisionMode,
-} from "@utils/changeRequestUtils";
+} from "@utils/changeRequests";
+import { formatDateTime } from "@utils/support";
 import {
   formatImpactLabel,
   getChangeRequestStateIcon,
   getChangeRequestImpactColorShades,
   getChangeRequestStateColorShades,
-} from "@constants/supportConstants";
+} from "@constants/changeRequestConstants";
 
 /**
  * Strip HTML tags from a string
@@ -84,7 +85,9 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
     projectId: string;
     changeRequestId: string;
   }>();
-  const basePath = location.pathname.includes("/operations/") ? "operations" : "support";
+  const basePath = location.pathname.includes("/operations/")
+    ? "operations"
+    : "support";
 
   const { showError } = useErrorBanner();
   const { showSuccess } = useSuccessBanner();
@@ -109,9 +112,7 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
   const impactColor = getChangeRequestImpactColorShades(
     changeRequest?.impact?.label,
   );
-  const statusColor = getChangeRequestStateColorShades(
-    changeRequest?.state?.label,
-  );
+  const statusColor = getChangeRequestStateColorShades(changeRequest?.state);
 
   const handleApproveChange = () => {
     if (!changeRequest || decisionMode === "none") return;
@@ -147,99 +148,9 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
     );
   };
 
-  // Render state icon based on state label
-  const renderStateIcon = () => {
-    const IconComponent = getChangeRequestStateIcon(
-      changeRequest?.state?.label,
-    );
-    return <IconComponent size={12} />;
-  };
-
   // Loading state with skeleton (or if fetching/no data yet)
   if (isLoading || (isFetching && !changeRequest)) {
-    return (
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {/* Header Skeleton */}
-        <Paper variant="outlined" sx={{ p: 4 }}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-            <Box sx={{ width: "100%" }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  flexWrap: "wrap",
-                  gap: 1,
-                  mb: 1,
-                }}
-              >
-                <Skeleton variant="text" width="60%" height={40} />
-                <Stack direction="row" spacing={1}>
-                  <Skeleton variant="rounded" width={100} height={24} />
-                  <Skeleton variant="rounded" width={100} height={24} />
-                </Stack>
-              </Box>
-              <Stack
-                direction="row"
-                spacing={1.5}
-                sx={{ alignItems: "center" }}
-              >
-                <Skeleton variant="text" width={100} />
-                <Skeleton variant="text" width={150} />
-                <Skeleton variant="text" width={200} />
-              </Stack>
-              <Stack direction="row" spacing={1} sx={{ mt: 1.5, justifyContent: "flex-end" }}>
-                <Skeleton variant="rounded" width={130} height={32} />
-                <Skeleton variant="rounded" width={130} height={32} />
-                <Skeleton variant="rounded" width={95} height={32} />
-              </Stack>
-            </Box>
-          </Box>
-        </Paper>
-
-        {/* Workflow Skeleton */}
-        <Paper variant="outlined" sx={{ p: 3 }}>
-          <Box sx={{ mb: 2 }}>
-            <Skeleton variant="text" width={250} height={32} />
-            <Skeleton variant="text" width="60%" height={20} />
-          </Box>
-          <Stack spacing={0}>
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Box key={i} sx={{ display: "flex", gap: 2 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                  }}
-                >
-                  <Skeleton variant="circular" width={40} height={40} />
-                  {i < 5 && (
-                    <Box sx={{ width: 2, height: 64, mt: 0.5 }}>
-                      <Skeleton variant="rectangular" width={2} height={64} />
-                    </Box>
-                  )}
-                </Box>
-                <Box sx={{ flex: 1, pb: i < 5 ? 2 : 0 }}>
-                  <Skeleton variant="text" width="30%" height={20} />
-                  <Skeleton variant="text" width="60%" height={16} />
-                </Box>
-              </Box>
-            ))}
-          </Stack>
-        </Paper>
-
-        {/* Content Cards Skeleton */}
-        {[1, 2, 3, 4].map((i) => (
-          <Paper key={i} variant="outlined" sx={{ p: 3 }}>
-            <Skeleton variant="text" width={200} height={32} sx={{ mb: 2 }} />
-            <Skeleton variant="text" width="100%" />
-            <Skeleton variant="text" width="90%" />
-            <Skeleton variant="text" width="95%" />
-          </Paper>
-        ))}
-      </Box>
-    );
+    return <ChangeRequestDetailsLoadingSkeleton />;
   }
 
   // Error state - only show error if we have an actual error and not loading
@@ -248,7 +159,9 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
       <Stack spacing={3}>
         <Button
           startIcon={<ArrowLeft size={16} />}
-          onClick={() => navigate(`/projects/${projectId}/${basePath}/change-requests`)}
+          onClick={() =>
+            navigate(`/projects/${projectId}/${basePath}/change-requests`)
+          }
           sx={{ alignSelf: "flex-start" }}
           variant="text"
         >
@@ -267,92 +180,15 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
     );
   }
 
-  // Loading state or no data yet
   if (!changeRequest) {
-    return (
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {/* Header Skeleton */}
-        <Paper variant="outlined" sx={{ p: 4 }}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-            <Box sx={{ width: "100%" }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  flexWrap: "wrap",
-                  gap: 1,
-                  mb: 1,
-                }}
-              >
-                <Skeleton variant="text" width="60%" height={40} />
-                <Stack direction="row" spacing={1}>
-                  <Skeleton variant="rounded" width={100} height={24} />
-                  <Skeleton variant="rounded" width={100} height={24} />
-                </Stack>
-              </Box>
-              <Stack
-                direction="row"
-                spacing={1.5}
-                sx={{ alignItems: "center" }}
-              >
-                <Skeleton variant="text" width={100} />
-                <Skeleton variant="text" width={150} />
-                <Skeleton variant="text" width={200} />
-              </Stack>
-              <Stack direction="row" spacing={1} sx={{ mt: 1.5, justifyContent: "flex-end" }}>
-                <Skeleton variant="rounded" width={130} height={32} />
-                <Skeleton variant="rounded" width={130} height={32} />
-                <Skeleton variant="rounded" width={95} height={32} />
-              </Stack>
-            </Box>
-          </Box>
-        </Paper>
-
-        {/* Workflow Skeleton */}
-        <Paper variant="outlined" sx={{ p: 3 }}>
-          <Box sx={{ mb: 2 }}>
-            <Skeleton variant="text" width={250} height={32} />
-            <Skeleton variant="text" width="60%" height={20} />
-          </Box>
-          <Stack spacing={0}>
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Box key={i} sx={{ display: "flex", gap: 2 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                  }}
-                >
-                  <Skeleton variant="circular" width={40} height={40} />
-                  {i < 5 && (
-                    <Box sx={{ width: 2, height: 64, mt: 0.5 }}>
-                      <Skeleton variant="rectangular" width={2} height={64} />
-                    </Box>
-                  )}
-                </Box>
-                <Box sx={{ flex: 1, pb: i < 5 ? 2 : 0 }}>
-                  <Skeleton variant="text" width="30%" height={20} />
-                  <Skeleton variant="text" width="60%" height={16} />
-                </Box>
-              </Box>
-            ))}
-          </Stack>
-        </Paper>
-
-        {/* Content Cards Skeleton */}
-        {[1, 2, 3, 4].map((i) => (
-          <Paper key={i} variant="outlined" sx={{ p: 3 }}>
-            <Skeleton variant="text" width={200} height={32} sx={{ mb: 2 }} />
-            <Skeleton variant="text" width="100%" />
-            <Skeleton variant="text" width="90%" />
-            <Skeleton variant="text" width="95%" />
-          </Paper>
-        ))}
-      </Box>
-    );
+    return <ChangeRequestDetailsLoadingSkeleton />;
   }
+
+  // Render state icon from stable id/label resolution
+  const renderStateIcon = () => {
+    const IconComponent = getChangeRequestStateIcon(changeRequest.state);
+    return <IconComponent size={12} />;
+  };
 
   // Compute stripped values for proper fallback rendering
   const descriptionText = stripHtmlTags(changeRequest.description);
@@ -363,7 +199,14 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
   const testPlanText = stripHtmlTags(changeRequest.testPlan);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, minHeight: "100vh" }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        minHeight: "100vh",
+      }}
+    >
       {/* Fixed Header: Back Button + Export */}
       <Box
         sx={{
@@ -377,7 +220,9 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
       >
         <Button
           startIcon={<ArrowLeft size={16} />}
-          onClick={() => navigate(`/projects/${projectId}/${basePath}/change-requests`)}
+          onClick={() =>
+            navigate(`/projects/${projectId}/${basePath}/change-requests`)
+          }
           sx={{ alignSelf: "flex-start" }}
           variant="text"
         >
@@ -387,11 +232,15 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
           variant="contained"
           size="small"
           startIcon={<Download size={18} />}
+          color="warning"
           onClick={() => {
             try {
               generateChangeRequestDetailsPdf(changeRequest, []);
             } catch (error) {
-              const message = error instanceof Error ? error.message : "Failed to generate PDF";
+              const message =
+                error instanceof Error
+                  ? error.message
+                  : "Failed to generate PDF";
               showError(message);
             }
           }}
@@ -421,7 +270,14 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
                   flexWrap: "wrap",
                 }}
               >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    flexWrap: "wrap",
+                  }}
+                >
                   <Typography variant="h5" color="text.primary">
                     {changeRequest.title || "Not Available"}
                   </Typography>
@@ -438,7 +294,14 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
                     />
                   )}
                 </Box>
-                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 1,
+                    flexWrap: "wrap",
+                    justifyContent: "flex-end",
+                  }}
+                >
                   {changeRequest.impact?.label &&
                     typeof changeRequest.impact.label === "string" && (
                       <Chip
@@ -491,32 +354,47 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
                     flexWrap: "wrap",
                   }}
                 >
-                  <Typography variant="body2" fontWeight={600} color="text.primary">
+                  <Typography
+                    variant="body2"
+                    fontWeight={600}
+                    color="text.primary"
+                  >
                     {changeRequest.number}
                   </Typography>
                   <Typography variant="body2" color="text.disabled">
                     |
                   </Typography>
+                  {changeRequest.createdOn && (
+                    <>
+                      <Typography variant="body2" color="text.secondary">
+                        {`Created: ${formatDateTime(changeRequest.createdOn)}`}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.disabled"
+                        sx={{ ml: 1 }}
+                      >
+                        |
+                      </Typography>
+                    </>
+                  )}
                   <Button
                     variant="text"
                     size="small"
                     startIcon={<ExternalLink size={14} />}
                     onClick={() => {
                       if (changeRequest.case?.id) {
-                        navigate(`/projects/${projectId}/support/cases/${changeRequest.case.id}`);
+                        navigate(
+                          `/projects/${projectId}/support/cases/${changeRequest.case.id}`,
+                        );
                       }
                     }}
                     disabled={!changeRequest.case?.id}
                     sx={{ minHeight: "unset", p: 0 }}
                   >
-                    Service Request: {changeRequest.case?.number || "Not Available"}
+                    Service Request:{" "}
+                    {changeRequest.case?.number || "Not Available"}
                   </Button>
-                  <Typography variant="body2" color="text.disabled">
-                    |
-                  </Typography>
-                  <Typography variant="body2">
-                    Created {changeRequest.createdOn}
-                  </Typography>
                 </Box>
                 {canShowApprovalActions && (
                   <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
@@ -526,6 +404,7 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
                         variant="outlined"
                         startIcon={<CalendarClock size={14} aria-hidden />}
                         onClick={() => setProposeTimeOpen(true)}
+                        disabled={patchChangeRequest.isPending}
                         sx={{
                           height: 32,
                           color: colors.blue[700],
@@ -594,11 +473,17 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
         }}
       >
         {/* Left Column - Scrollable Content */}
-        <Box sx={{ flex: 1, overflow: { xs: "visible", md: "auto" }, display: "flex", flexDirection: "column", gap: 2 }}>
+        <Box
+          sx={{
+            flex: 1,
+            overflow: { xs: "visible", md: "auto" },
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+          }}
+        >
           {/* Scheduled Maintenance Window Card */}
-          <ScheduledMaintenanceWindowCard
-            changeRequest={changeRequest}
-          />
+          <ScheduledMaintenanceWindowCard changeRequest={changeRequest} />
 
           {/* Deployment & Component Card */}
           <Paper variant="outlined">
@@ -610,9 +495,19 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
             </Box>
 
             <Box sx={{ px: 3, py: 3 }}>
-              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 3 }}>
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                  gap: 3,
+                }}
+              >
                 <Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 1 }}
+                  >
                     Deployment
                   </Typography>
                   <Typography variant="body2">
@@ -622,7 +517,11 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
                   </Typography>
                 </Box>
                 <Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 1 }}
+                  >
                     Component
                   </Typography>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -719,7 +618,8 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
                             style={{ marginTop: 2 }}
                           />
                           <Typography variant="body2" color="text.primary">
-                            {serviceOutageText || "Service outage details not available"}
+                            {serviceOutageText ||
+                              "Service outage details not available"}
                           </Typography>
                         </Box>
                       </Paper>
@@ -798,7 +698,9 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
                   <Typography variant="body2" color="text.secondary">
                     Created Date
                   </Typography>
-                  <Typography variant="body2">{changeRequest.createdOn}</Typography>
+                  <Typography variant="body2">
+                    {changeRequest.createdOn}
+                  </Typography>
                 </Box>
 
                 <Divider />
@@ -832,14 +734,21 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
               </Stack>
             </Box>
           </Paper>
-
         </Box>
 
         {/* Right Column - Workflow (Fixed Width, Scrollable) */}
-        <Box sx={{ width: { xs: "100%", md: 400 }, flexShrink: 0, overflow: { xs: "visible", md: "auto" } }}>
+        <Box
+          sx={{
+            width: { xs: "100%", md: 400 },
+            flexShrink: 0,
+            overflow: { xs: "visible", md: "auto" },
+          }}
+        >
           <Paper variant="outlined">
             <Box sx={{ px: 3, pt: 3 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}
+              >
                 <Typography variant="h6">Change Request Workflow</Typography>
               </Box>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -886,12 +795,17 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
                           }}
                         >
                           {stage.completed ? (
-                            <CircleCheckBig size={20} color={colors.green[600]} />
+                            <CircleCheckBig
+                              size={20}
+                              color={colors.green[600]}
+                            />
                           ) : (
                             <Circle
                               size={20}
                               color={
-                                stage.current ? colors.blue[600] : colors.grey[400]
+                                stage.current
+                                  ? colors.blue[600]
+                                  : colors.grey[400]
                               }
                               fill={stage.current ? colors.blue[600] : "none"}
                             />
