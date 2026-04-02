@@ -54,11 +54,16 @@ import {
   replaceInlineImageSources,
   extractInlineImageRefId,
   formatCommentDate,
+  toDatetimeLocalInputFromApiString,
+  dateFromApiCreatedOn,
+  compareByCreatedOnThenId,
+  parseApiLocalDateTimeMs,
   formatUtcToLocal,
   formatDateOnly,
   getInitials,
   hasDisplayableContent,
   stripCustomerPrefixFromReason,
+  formatCallRequestBackendDateTimeShort,
   isWithinOpenRelatedCaseWindow,
   toPresentContinuousActionLabel,
   toPresentTenseActionLabel,
@@ -147,6 +152,26 @@ describe("support utils", () => {
 
     it("returns empty string for empty input", () => {
       expect(stripCustomerPrefixFromReason("")).toBe("");
+    });
+  });
+
+  describe("formatCallRequestBackendDateTimeShort", () => {
+    it("formats YYYY-MM-DD HH:mm:ss as wall-clock without shifting timezone", () => {
+      expect(formatCallRequestBackendDateTimeShort("2026-04-02 05:49:41")).toBe(
+        "Apr 2, 5:49 AM",
+      );
+    });
+
+    it("formats MM/DD/YYYY HH:mm:ss as wall-clock", () => {
+      expect(formatCallRequestBackendDateTimeShort("04/02/2026 01:50:00")).toBe(
+        "Apr 2, 1:50 AM",
+      );
+    });
+
+    it("returns -- for empty or invalid input", () => {
+      expect(formatCallRequestBackendDateTimeShort("")).toBe("--");
+      expect(formatCallRequestBackendDateTimeShort(undefined)).toBe("--");
+      expect(formatCallRequestBackendDateTimeShort("not a date")).toBe("--");
     });
   });
 
@@ -826,11 +851,61 @@ describe("support utils", () => {
       expect(result).toMatch(/2026/);
     });
 
-    it("should normalize ServiceNow timestamp YYYY-MM-DD HH:MM:SS as UTC", () => {
+    it("should parse YYYY-MM-DD HH:MM:SS as local wall time (no UTC shift)", () => {
       const result = formatCommentDate("2026-02-13 15:45:00");
       expect(result).toMatch(/Feb/);
       expect(result).toMatch(/13/);
       expect(result).toMatch(/2026/);
+    });
+  });
+
+  describe("toDatetimeLocalInputFromApiString", () => {
+    it("should map YYYY-MM-DD HH:mm:ss to datetime-local without UTC shift", () => {
+      expect(toDatetimeLocalInputFromApiString("2026-03-27 13:34:56")).toBe(
+        "2026-03-27T13:34",
+      );
+    });
+
+    it("should map T-separated local wall time without Z", () => {
+      expect(toDatetimeLocalInputFromApiString("2026-03-27T13:34:56")).toBe(
+        "2026-03-27T13:34",
+      );
+    });
+  });
+
+  describe("parseApiLocalDateTimeMs", () => {
+    it("should parse T-separated unzoned as local wall", () => {
+      const space = parseApiLocalDateTimeMs("2026-03-27 13:32:54");
+      const tsep = parseApiLocalDateTimeMs("2026-03-27T13:32:54");
+      expect(space).toBe(tsep);
+    });
+  });
+
+  describe("compareByCreatedOnThenId", () => {
+    it("should order human before Novera when createdOn matches", () => {
+      const human = {
+        createdOn: "2026-03-27 13:29:37",
+        id: "b",
+        createdBy: "user@wso2.com",
+        type: "comments",
+      };
+      const novera = {
+        createdOn: "2026-03-27 13:29:37",
+        id: "a",
+        createdBy: "Novera",
+        type: "comments",
+      };
+      const sorted = [novera, human].sort(compareByCreatedOnThenId);
+      expect(sorted[0]?.createdBy).toBe("user@wso2.com");
+      expect(sorted[1]?.createdBy).toBe("Novera");
+    });
+  });
+
+  describe("dateFromApiCreatedOn", () => {
+    it("should order consecutive API local timestamps", () => {
+      const a = dateFromApiCreatedOn("2026-03-27 13:32:54");
+      const b = dateFromApiCreatedOn("2026-03-27 13:32:55");
+      expect(a.getTime()).toBeLessThan(b.getTime());
     });
   });
 
