@@ -222,6 +222,44 @@ export function utcToDatetimeLocal(utcStr: string | null | undefined): string {
 }
 
 /**
+ * Builds a datetime-local input value from API strings: unzoned `YYYY-MM-DD HH:mm:ss` or
+ * `YYYY-MM-DDTHH:mm:ss` as local wall time; zoned/ISO uses {@link utcToDatetimeLocal}.
+ *
+ * @param dateStr - Raw timestamp from API.
+ * @returns {string} `YYYY-MM-DDTHH:mm` or empty if invalid.
+ */
+export function toDatetimeLocalInputFromApiString(
+  dateStr: string | null | undefined,
+): string {
+  if (!dateStr?.trim()) return "";
+  const t = dateStr.trim();
+  const ms = parseApiLocalDateTimeMs(t);
+  if (!Number.isNaN(ms)) {
+    const d = new Date(ms);
+    const pad = (x: number) => String(x).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  return utcToDatetimeLocal(t);
+}
+
+/**
+ * Parses `createdOn` for chat/comments: local wall `YYYY-MM-DD HH:mm:ss`, else UTC-normalized parse.
+ *
+ * @param createdOn - API timestamp.
+ * @returns {Date} Parsed date or current date if unparseable.
+ */
+export function dateFromApiCreatedOn(
+  createdOn: string | null | undefined,
+): Date {
+  if (!createdOn?.trim()) return new Date();
+  const localMs = parseApiLocalDateTimeMs(createdOn);
+  if (!Number.isNaN(localMs)) return new Date(localMs);
+  const normalized = normalizeUtcDateString(createdOn.trim());
+  const d = new Date(normalized);
+  return Number.isNaN(d.getTime()) ? new Date() : d;
+}
+
+/**
  * Strips "[Customer]" or "[CUSTOMER]" prefix from call request reason for display in edit form.
  *
  * @param {string} reason - Raw reason from API.
@@ -229,6 +267,89 @@ export function utcToDatetimeLocal(utcStr: string | null | undefined): string {
  */
 export function stripCustomerPrefixFromReason(reason: string): string {
   return reason.replace(/^\[Customer\]\s*/i, "").trim();
+}
+
+const CALL_REQ_SHORT_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
+
+function padClockMinute(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+function formatWallClockShort(
+  month1to12: number,
+  day: number,
+  hour24: number,
+  minute: number,
+): string {
+  if (
+    month1to12 < 1 ||
+    month1to12 > 12 ||
+    day < 1 ||
+    day > 31 ||
+    hour24 < 0 ||
+    hour24 > 23 ||
+    minute < 0 ||
+    minute > 59
+  ) {
+    return "--";
+  }
+  const mon = CALL_REQ_SHORT_MONTHS[month1to12 - 1];
+  const h12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  const ampm = hour24 < 12 ? "AM" : "PM";
+  return `${mon} ${day}, ${h12}:${padClockMinute(minute)} ${ampm}`;
+}
+
+/**
+ * Formats call-request timestamps exactly as returned by the API (wall-clock), with no timezone conversion.
+ * Supports `YYYY-MM-DD HH:mm:ss` and `MM/DD/YYYY HH:mm:ss`.
+ *
+ * @param dateStr - Raw string from the backend.
+ * @returns Short English date/time or "--" if unparseable.
+ */
+export function formatCallRequestBackendDateTimeShort(
+  dateStr: string | null | undefined,
+): string {
+  if (!dateStr?.trim()) return "--";
+  const t = dateStr.trim();
+
+  const ymd =
+    /^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2}):(\d{2})(?:\.\d+)?$/.exec(
+      t,
+    );
+  if (ymd) {
+    const mo = Number(ymd[2]);
+    const d = Number(ymd[3]);
+    const h = Number(ymd[4]);
+    const mi = Number(ymd[5]);
+    return formatWallClockShort(mo, d, h, mi);
+  }
+
+  const mdy =
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})(?:\.\d+)?$/.exec(
+      t,
+    );
+  if (mdy) {
+    const mo = Number(mdy[1]);
+    const d = Number(mdy[2]);
+    const h = Number(mdy[4]);
+    const mi = Number(mdy[5]);
+    return formatWallClockShort(mo, d, h, mi);
+  }
+
+  return "--";
 }
 
 /**
@@ -1201,8 +1322,9 @@ export function replaceInlineImageSources(
  */
 function normalizeCommentDateString(dateStr: string): string {
   const trimmed = dateStr.trim();
+  // API sends wall-clock local time without offset; do not treat as UTC.
   if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(trimmed)) {
-    return trimmed.replace(" ", "T") + "Z";
+    return trimmed.replace(" ", "T");
   }
   return trimmed;
 }
@@ -1431,12 +1553,162 @@ export function hasListSearchOrFilters(
   searchTerm: string,
   filters: object,
 ): boolean {
-  if (searchTerm.trim().length > 0) {
-    return true;
-  }
-  return Object.values(
+  return countListSearchAndFilters(searchTerm, filters) > 0;
+}
+
+/**
+ * Counts active refinements: non-empty search counts as one, plus each non-empty filter field.
+ *
+ * @param searchTerm - Search string.
+ * @param filters - Filter key/value object.
+ * @returns {number} Number of active filters (minimum 0).
+ */
+export function countListSearchAndFilters(
+  searchTerm: string,
+  filters: object,
+): number {
+  let n = 0;
+  if (searchTerm.trim().length > 0) n += 1;
+  for (const v of Object.values(
     filters as Record<string, string | number | undefined | null>,
-  ).some(
-    (v) => v !== undefined && v !== null && String(v).trim() !== "",
+  )) {
+    if (v !== undefined && v !== null && String(v).trim() !== "") {
+      n += 1;
+    }
+  }
+  return n;
+}
+
+/**
+ * Parses API timestamps for ordering: unzoned `YYYY-MM-DD HH:mm:ss` or `YYYY-MM-DDTHH:mm:ss`
+ * as local wall time; strings with `Z` or numeric offset use instant parsing.
+ *
+ * @param dateStr - Raw timestamp from API.
+ * @returns {number} Epoch ms or NaN if invalid.
+ */
+export function parseApiLocalDateTimeMs(dateStr: string | null | undefined): number {
+  if (!dateStr?.trim()) return Number.NaN;
+  const trimmed = dateStr.trim();
+
+  if (
+    /Z$/i.test(trimmed) ||
+    /[+-]\d{2}:?\d{2}(?::?\d{2})?$/.test(trimmed)
+  ) {
+    const t = Date.parse(trimmed);
+    return Number.isNaN(t) ? Number.NaN : t;
+  }
+
+  const local = /^(\d{4})-(\d{2})-(\d{2})[\sT](\d{1,2}):(\d{2}):(\d{2})(?:\.\d+)?$/.exec(
+    trimmed,
   );
+  if (local) {
+    const y = Number(local[1]);
+    const mo = Number(local[2]);
+    const d = Number(local[3]);
+    const h = Number(local[4]);
+    const mi = Number(local[5]);
+    const s = Number(local[6]);
+    if (
+      mo < 1 ||
+      mo > 12 ||
+      d < 1 ||
+      d > 31 ||
+      h < 0 ||
+      h > 23 ||
+      mi > 59 ||
+      s > 59
+    ) {
+      return Number.NaN;
+    }
+    const dt = new Date(y, mo - 1, d, h, mi, s);
+    return dt.getTime();
+  }
+
+  const t = Date.parse(trimmed);
+  return Number.isNaN(t) ? Number.NaN : t;
+}
+
+/**
+ * True for Novera / bot automation rows (conversation + case comments).
+ *
+ * @param createdBy - Comment author.
+ * @param type - Optional message type (e.g. "bot").
+ * @returns {boolean} Whether this row is treated as assistant/bot for ordering.
+ */
+export function isNoveraOrBotSender(
+  createdBy?: string | null,
+  type?: string | null,
+): boolean {
+  const by = (createdBy ?? "").trim().toLowerCase();
+  const ty = (type ?? "").trim().toLowerCase();
+  return ty === "bot" || by === "novera";
+}
+
+/** Shape accepted by {@link compareByCreatedOnThenId}. */
+export type CreatedOnSortable = {
+  createdOn?: string | null;
+  id?: string | null;
+  createdBy?: string | null;
+  type?: string | null;
+};
+
+/**
+ * Stable sort: time ascending, then human before Novera/bot when timestamps tie, then id.
+ */
+export function compareByCreatedOnThenId(
+  a: CreatedOnSortable,
+  b: CreatedOnSortable,
+): number {
+  const aT = parseApiLocalDateTimeMs(a.createdOn ?? undefined);
+  const bT = parseApiLocalDateTimeMs(b.createdOn ?? undefined);
+  const aOk = !Number.isNaN(aT);
+  const bOk = !Number.isNaN(bT);
+  if (aOk && bOk && aT !== bT) return aT - bT;
+  if (aOk && !bOk) return -1;
+  if (!aOk && bOk) return 1;
+  if (aOk && bOk && aT === bT) {
+    const aBot = isNoveraOrBotSender(a.createdBy, a.type);
+    const bBot = isNoveraOrBotSender(b.createdBy, b.type);
+    if (aBot !== bBot) {
+      return aBot ? 1 : -1;
+    }
+  }
+  const idA = a.id ?? "";
+  const idB = b.id ?? "";
+  return idA.localeCompare(idB);
+}
+
+/**
+ * Earliest datetime-local value for scheduling a call: now + severity allocation minutes,
+ * rounded up to the next 5-minute boundary (e.g. 9:23 + 30m → 9:55).
+ *
+ * @param allocationMinutes - Minutes from filter metadata for this severity id.
+ * @returns {string} Value for input type="datetime-local" min attribute.
+ */
+export function computeMinScheduleDatetimeLocal(
+  allocationMinutes?: number | null,
+): string {
+  const pad = (x: number) => String(x).padStart(2, "0");
+  const toLocalStr = (d: Date) =>
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+  const nowPlusOne = new Date(Date.now() + 60 * 1000);
+  const floorStr = toLocalStr(nowPlusOne);
+
+  if (
+    allocationMinutes == null ||
+    Number.isNaN(allocationMinutes) ||
+    allocationMinutes < 0
+  ) {
+    return floorStr;
+  }
+
+  const target = new Date(Date.now() + allocationMinutes * 60 * 1000);
+  const rem = target.getMinutes() % 5;
+  if (rem !== 0) {
+    target.setMinutes(target.getMinutes() + (5 - rem));
+  }
+  target.setSeconds(0, 0);
+  const severityStr = toLocalStr(target);
+  return severityStr > floorStr ? severityStr : floorStr;
 }
