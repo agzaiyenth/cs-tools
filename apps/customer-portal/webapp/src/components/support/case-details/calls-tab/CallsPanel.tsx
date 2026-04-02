@@ -14,11 +14,21 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Button, Stack } from "@wso2/oxygen-ui";
+import { Box, Button, Pagination, Stack } from "@wso2/oxygen-ui";
 import { PhoneCall } from "@wso2/oxygen-ui-icons-react";
-import { useState, useCallback, useEffect, useMemo, type JSX } from "react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  type ChangeEvent,
+  type JSX,
+} from "react";
 import type { CallRequest } from "@models/responses";
-import { useGetCallRequests } from "@api/useGetCallRequests";
+import {
+  useGetCallRequests,
+  CALL_REQUESTS_PAGE_SIZE,
+} from "@api/useGetCallRequests";
 import { usePatchCallRequest } from "@api/usePatchCallRequest";
 import useGetUserDetails from "@api/useGetUserDetails";
 import useGetProjectFilters from "@api/useGetProjectFilters";
@@ -80,6 +90,7 @@ export default function CallsPanel({
   const [hasShownTzPrompt, setHasShownTzPrompt] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [callRequestsPage, setCallRequestsPage] = useState(1);
 
   const { data: projectFilters } = useGetProjectFilters(projectId);
   const { data: userDetails } = useGetUserDetails();
@@ -143,10 +154,63 @@ export default function CallsPanel({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isFetchNextPageError,
   } = useGetCallRequests(projectId, caseId, callRequestStateKeys);
   const patchCallRequest = usePatchCallRequest(projectId, caseId);
 
-  const callRequests = data?.pages?.flatMap((p) => p.callRequests ?? []) ?? [];
+  const allCallRequests = useMemo(
+    () => data?.pages?.flatMap((p) => p.callRequests ?? []) ?? [],
+    [data],
+  );
+
+  const totalCallRequestRecords =
+    data?.pages?.[0]?.totalRecords ?? allCallRequests.length;
+  const callRequestTotalPages = Math.ceil(
+    totalCallRequestRecords / CALL_REQUESTS_PAGE_SIZE,
+  );
+  const boundedCallRequestPage =
+    callRequestTotalPages > 0 && callRequestsPage > callRequestTotalPages
+      ? 1
+      : callRequestsPage;
+
+  const paginatedCallRequests = useMemo(() => {
+    const start = (boundedCallRequestPage - 1) * CALL_REQUESTS_PAGE_SIZE;
+    return allCallRequests.slice(start, start + CALL_REQUESTS_PAGE_SIZE);
+  }, [allCallRequests, boundedCallRequestPage]);
+
+  useEffect(() => {
+    setCallRequestsPage(1);
+  }, [caseId, projectId]);
+
+  useEffect(() => {
+    const neededCount = boundedCallRequestPage * CALL_REQUESTS_PAGE_SIZE;
+    if (
+      !isPending &&
+      !isFetchingNextPage &&
+      !isFetchNextPageError &&
+      hasNextPage &&
+      allCallRequests.length < neededCount &&
+      allCallRequests.length < totalCallRequestRecords
+    ) {
+      fetchNextPage();
+    }
+  }, [
+    boundedCallRequestPage,
+    allCallRequests.length,
+    totalCallRequestRecords,
+    hasNextPage,
+    fetchNextPage,
+    isPending,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  ]);
+
+  const handleCallRequestPageChange = (
+    _event: ChangeEvent<unknown>,
+    page: number,
+  ) => {
+    setCallRequestsPage(page);
+  };
 
   const handleOpenModal = () => {
     setEditCall(null);
@@ -289,7 +353,7 @@ export default function CallsPanel({
         />
       )}
 
-      {!(callRequests.length === 0 && !isPending && !isError) && (
+      {!(allCallRequests.length === 0 && !isPending && !isError) && (
         <Box sx={{ alignSelf: "flex-start" }}>{requestCallButton}</Box>
       )}
 
@@ -297,29 +361,31 @@ export default function CallsPanel({
         <CallsListSkeleton />
       ) : isError ? (
         <CallsErrorState />
-      ) : callRequests.length === 0 ? (
+      ) : allCallRequests.length === 0 ? (
         <CallsEmptyState action={requestCallButton} />
       ) : (
-        <>
+        <Stack spacing={2}>
           <CallRequestList
-            requests={callRequests}
+            requests={paginatedCallRequests}
             userTimeZone={userTimeZone}
             onEditClick={disableCallActions ? undefined : handleEditClick}
             onDeleteClick={disableCallActions ? undefined : handleDeleteClick}
             onApproveClick={disableCallActions ? undefined : handleApproveClick}
             onRejectClick={disableCallActions ? undefined : handleRejectClick}
           />
-          {hasNextPage && (
-            <Button
-              variant="outlined"
-              onClick={() => fetchNextPage()}
-              disabled={isFetchingNextPage}
-              sx={{ alignSelf: "flex-start" }}
-            >
-              {isFetchingNextPage ? "Loading..." : "Load more"}
-            </Button>
+          {callRequestTotalPages > 1 && (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
+              <Pagination
+                count={callRequestTotalPages}
+                page={boundedCallRequestPage}
+                onChange={handleCallRequestPageChange}
+                color="primary"
+                showFirstButton
+                showLastButton
+              />
+            </Box>
           )}
-        </>
+        </Stack>
       )}
 
       <DeleteCallRequestModal
