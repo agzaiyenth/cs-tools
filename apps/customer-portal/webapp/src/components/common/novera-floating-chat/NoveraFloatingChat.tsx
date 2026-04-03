@@ -16,7 +16,6 @@
 
 import {
   Box,
-  Button,
   Card,
   CardContent,
   Divider,
@@ -41,7 +40,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import useGetProjectDetails from "@api/useGetProjectDetails";
 import { usePostProjectDeploymentsSearchAll } from "@api/usePostProjectDeploymentsSearch";
 import { useAllDeploymentProducts } from "@hooks/useAllDeploymentProducts";
@@ -66,7 +65,6 @@ const WELCOME_MESSAGE =
  * @returns {JSX.Element | null} Floating widget, or null when not applicable.
  */
 export default function NoveraFloatingChat(): JSX.Element | null {
-  const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -302,13 +300,6 @@ export default function NoveraFloatingChat(): JSX.Element | null {
     updateActiveBotMessage,
   ]);
 
-  const handleCreateCase = useCallback(() => {
-    if (!projectId) return;
-    navigate(`/projects/${projectId}/support/chat/create-case`, {
-      state: { messages, conversationId },
-    });
-  }, [conversationId, messages, navigate, projectId]);
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -437,17 +428,7 @@ export default function NoveraFloatingChat(): JSX.Element | null {
 
             <Divider />
             <Box sx={{ p: 1.5, bgcolor: "background.paper" }}>
-              <Box sx={{ mb: 1, display: "flex", justifyContent: "flex-end" }}>
-                <Button
-                  size="small"
-                  variant="contained"
-                  color="primary"
-                  onClick={handleCreateCase}
-                >
-                  Create Case
-                </Button>
-              </Box>
-              <Box sx={{ display: "flex", gap: 1, alignItems: "flex-end" }}>
+              <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                 <TextField
                   fullWidth
                   placeholder="Ask Novera anything..."
