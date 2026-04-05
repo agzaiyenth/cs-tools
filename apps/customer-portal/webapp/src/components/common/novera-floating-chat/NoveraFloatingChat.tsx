@@ -17,7 +17,6 @@
 import {
   Box,
   Card,
-  CardContent,
   Divider,
   IconButton,
   TextField,
@@ -356,6 +355,7 @@ export default function NoveraFloatingChat(): JSX.Element | null {
             py: 1.5,
             color: "common.white",
             background: "linear-gradient(90deg, #ff8f00 0%, #f57c00 100%)",
+            borderRadius: isMinimized ? "inherit" : "unset",
           }}
         >
           <Box
@@ -410,14 +410,8 @@ export default function NoveraFloatingChat(): JSX.Element | null {
             </Box>
           </Box>
         </Box>
-
-        {isMinimized ? (
-          <CardContent sx={{ p: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              Chat with Novera AI - Click to expand
-            </Typography>
-          </CardContent>
-        ) : (
+  
+        {!isMinimized && (
           <>
             <Box
               sx={{
@@ -436,7 +430,7 @@ export default function NoveraFloatingChat(): JSX.Element | null {
               )}
               <div ref={messagesEndRef} />
             </Box>
-
+  
             <Divider />
             <Box sx={{ p: 1.5, bgcolor: "background.paper" }}>
               <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
