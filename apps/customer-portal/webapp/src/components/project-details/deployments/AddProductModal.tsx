@@ -32,6 +32,7 @@ import { X } from "@wso2/oxygen-ui-icons-react";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -100,6 +101,29 @@ export default function AddProductModal({
     number | null
   >(null);
 
+  const [productsLoadMorePending, setProductsLoadMorePending] = useState(false);
+  const [versionsLoadMorePending, setVersionsLoadMorePending] = useState(false);
+  const accumulatedProductsLengthRef = useRef(0);
+  const accumulatedVersionsLengthRef = useRef(0);
+
+  useLayoutEffect(() => {
+    accumulatedProductsLengthRef.current = products.length;
+    accumulatedVersionsLengthRef.current = versions.length;
+  }, [products, versions]);
+
+  const resetModalState = useCallback(() => {
+    setForm(INITIAL_FORM);
+    setProductOffset(0);
+    setProducts([]);
+    setVersionOffset(0);
+    setVersions([]);
+    previousProductIdRef.current = "";
+    setProductsLoadMorePending(false);
+    setVersionsLoadMorePending(false);
+    setCachedProductsTotalRecords(null);
+    setCachedVersionsTotalRecords(null);
+  }, []);
+
   const {
     data: productsPage,
     isLoading: isLoadingProducts,
@@ -109,13 +133,7 @@ export default function AddProductModal({
     limit: 10,
   });
 
-  const [productsLoadMorePending, setProductsLoadMorePending] = useState(false);
-  const [versionsLoadMorePending, setVersionsLoadMorePending] = useState(false);
-  const accumulatedProductsLengthRef = useRef(0);
-  const accumulatedVersionsLengthRef = useRef(0);
-  accumulatedProductsLengthRef.current = products.length;
-  accumulatedVersionsLengthRef.current = versions.length;
-
+  /* eslint-disable react-hooks/set-state-in-effect -- paginated Select: load-more flags + merged list rows */
   useEffect(() => {
     if (!isFetchingProducts) {
       setProductsLoadMorePending(false);
@@ -137,7 +155,6 @@ export default function AddProductModal({
     }
   }, [isFetchingVersions]);
 
-  /* eslint-disable react-hooks/set-state-in-effect -- accumulate paginated product rows for the Select menu */
   useEffect(() => {
     if (!productsPage) return;
 
@@ -367,18 +384,9 @@ export default function AddProductModal({
     deploymentId.length > 0;
 
   const handleClose = useCallback(() => {
-    setForm(INITIAL_FORM);
-    setProductOffset(0);
-    setProducts([]);
-    setVersionOffset(0);
-    setVersions([]);
-    previousProductIdRef.current = "";
-    setProductsLoadMorePending(false);
-    setVersionsLoadMorePending(false);
-    setCachedProductsTotalRecords(null);
-    setCachedVersionsTotalRecords(null);
+    resetModalState();
     onClose();
-  }, [onClose]);
+  }, [onClose, resetModalState]);
 
   const handleProductChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
