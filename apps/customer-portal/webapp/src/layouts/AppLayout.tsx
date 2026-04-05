@@ -94,12 +94,17 @@ export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
   const isCaseDetailsPage =
     /\/projects\/[^/]+\/support\/cases\/[^/]+$/.test(location.pathname) ||
     /\/[^/]+\/support\/cases\/[^/]+$/.test(location.pathname);
+  const isServiceRequestCreatePage = location.pathname.endsWith(
+    "/service-requests/create",
+  );
   const isServiceRequestDetailsPage =
-    /\/projects\/[^/]+\/(?:support|operations)\/service-requests\/[^/]+$/.test(
+    (/\/projects\/[^/]+\/(?:support|operations)\/service-requests\/[^/]+$/.test(
       location.pathname,
-    ) || /\/[^/]+\/(?:support|operations)\/service-requests\/[^/]+$/.test(
-      location.pathname,
-    );
+    ) ||
+      /\/[^/]+\/(?:support|operations)\/service-requests\/[^/]+$/.test(
+        location.pathname,
+      )) &&
+    !isServiceRequestCreatePage;
   const isEngagementDetailsPage = location.pathname.includes("/engagements/");
   const isSecurityReportAnalysisDetailsPage =
     /\/projects\/[^/]+\/security-center\/security-report-analysis\/[^/]+$/.test(
