@@ -59,7 +59,7 @@ isolated function extractEntityMessage(map<anydata|readonly> & readonly errorDet
 # + return - HTTP error response
 isolated function createHttpErrorResponse(int statusCode, string? entityMessage) returns HttpErrorResponse {
     string errorMessage = entityMessage ?: "An unexpected error occurred.";
-    json body = {message: string `${ERR_MSG_CS_ENTITY} ${errorMessage}`};
+    json body = {message: string `${ERR_MSG_CUSTOMER_SERVICE} ${errorMessage}`};
 
     match statusCode {
         http:STATUS_BAD_REQUEST => {

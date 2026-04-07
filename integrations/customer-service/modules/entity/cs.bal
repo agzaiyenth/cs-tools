@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-# Search deployments with filters from CS Entity.
+# Search deployments with filters.
 #
 # + token - ID token for authorization
 # + payload - Deployment search request payload containing filters
@@ -25,10 +25,10 @@ public isolated function searchDeployments(string token, DeploymentSearchPayload
     return csEntityClient->/deployments/search.post(payload, generateHeaders(token));
 }
 
-# Search deployed products by deployment ID from CS Entity.
+# Search deployed products with filters.
 #
 # + token - ID token for authorization
-# + payload - Deployed product search request payload containing deployment ID
+# + payload - Deployed product search request payload containing filters
 # + return - Deployed product search response or error
 public isolated function searchDeployedProducts(string token, DeployedProductSearchPayload payload)
     returns DeployedProductsResponse|error {

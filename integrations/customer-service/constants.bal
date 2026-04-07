@@ -21,5 +21,5 @@ const USER_ID_TOKEN = "x-user-id-token";
 const ERR_MSG_GET_CONTACTS = "An error occurred while retrieving contacts";
 const ERR_MSG_CONTACTS_NOTFOUND = "Contact not found";
 const ERR_MSG_CONTACTS_BAD_REQUEST = "Email not provided";
-const ERR_MSG_CS_ENTITY = "CS Entity Service Error:";
+const ERR_MSG_CUSTOMER_SERVICE = "Customer Service Operation Error:";
 const ERR_MSG_INVOKER_HEADER = "Missing or invalid user ID token header.";

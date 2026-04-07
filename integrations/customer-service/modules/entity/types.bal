@@ -68,13 +68,13 @@ public type IdString string;
 @constraint:String {
     pattern: re `^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$`
 }
-public type DateString string;
+public type Date string;
 
 # DateTime string type with YYYY-MM-DD HH:MM:SS format constraint.
 @constraint:String {
     pattern: re `^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]) ([01]\d|2[0-3]):[0-5]\d:[0-5]\d$`
 }
-public type DateTimeString string;
+public type DateTime string;
 
 # Pagination information.
 public type Pagination record {|
@@ -139,7 +139,7 @@ public type DeploymentSearchPayload record {|
     Pagination pagination?;
 |};
 
-# Deployment data from ServiceNow.
+# Deployment data from CS Entity Service.
 public type Deployment record {|
     # System ID of the deployment
     IdString id;
@@ -160,7 +160,7 @@ public type Deployment record {|
     json...;
 |};
 
-# Deployments response from ServiceNow.
+# Deployments response from CS Entity Service.
 public type DeploymentsResponse record {|
     # List of deployments
     Deployment[] deployments;
@@ -171,9 +171,6 @@ public type DeploymentsResponse record {|
 
 # Request payload for searching deployed products.
 public type DeployedProductSearchPayload record {|
-    // TODO: Remove this field after completing backend updates.
-    # Deployment ID 
-    IdString deploymentId?;
     # Filter criteria
     record {|
         # List of project IDs to filter
@@ -192,13 +189,13 @@ public type ProductUpdate record {|
     # Update level
     int updateLevel;
     # Update date
-    DateString date;
+    Date date;
     # Update details
     string? details?;
     json...;
 |};
 
-# Product data from ServiceNow.
+# Product data from CS Entity Service.
 public type DeployedProduct record {|
     # System ID of the product
     IdString id;
@@ -229,7 +226,7 @@ public type DeployedProduct record {|
     json...;
 |};
 
-# Deployed products response from ServiceNow.
+# Deployed products response from CS Entity Service.
 public type DeployedProductsResponse record {|
     # List of deployed products
     DeployedProduct[] deployedProducts;

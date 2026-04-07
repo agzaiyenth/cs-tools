@@ -32,26 +32,23 @@ service class ErrorInterceptor {
     # Intercepts the response error.
     #
     # + err - The error occurred during request processing
-    # + ctx - The HTTP request context
-    # + return - Bad request response or error
-    remote function interceptResponseError(error err, http:RequestContext ctx)
-        returns http:BadRequest|http:InternalServerError {
-
+    # + return - Internal server error response
+    remote function interceptResponseError(error err) returns http:InternalServerError {
         if err is http:PayloadBindingError {
-            string customError = "Failed to bind request payload to the expected schema.";
+            string customError = string `${ERR_MSG_CUSTOMER_SERVICE} Failed to bind payload to the expected schema.`;
             log:printError(customError, err);
-            return <http:BadRequest>{
+            return <http:InternalServerError>{
                 body: {
                     message: customError
                 }
             };
         }
 
-        // Log and handle other errors
-        log:printError("Unexpected error occurred during request processing", err);
+        string customError = string `${ERR_MSG_CUSTOMER_SERVICE} An unexpected error occurred.`;
+        log:printError(customError, err);
         return <http:InternalServerError>{
             body: {
-                message: "An unexpected error occurred. Please try again later."
+                message: customError
             }
         };
     }
