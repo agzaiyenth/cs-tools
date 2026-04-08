@@ -5103,7 +5103,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
         entity:InstanceUsageResponse|error response = entity:searchInstanceUsage(userInfo.idToken,
                 {
                     filters: {
-                        deploymentIds: [id],
+                        deployedProductIds: [id],
                         startDate: payload.filters.startDate,
                         endDate: payload.filters.endDate
                     }
