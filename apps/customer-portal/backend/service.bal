@@ -4898,7 +4898,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     # + id - ID of the deployed product
     # + payload - Instance metrics search payload containing filter criteria
     # + return - List of instance metrics matching the criteria or an error response
-    resource function post products/[entity:IdString id]/instances/metrics/search(http:RequestContext ctx,
+    resource function post deployments/products/[entity:IdString id]/instances/metrics/search(http:RequestContext ctx,
             types:InstanceMetricsPayload payload)
         returns http:Ok|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
 
@@ -5087,7 +5087,7 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
     # + id - ID of the deployed product
     # + payload - Instance metrics search payload containing filter criteria
     # + return - List of instance metrics matching the criteria or an error response
-    resource function post products/[entity:IdString id]/instances/usages/search(http:RequestContext ctx,
+    resource function post deployments/products/[entity:IdString id]/instances/usages/search(http:RequestContext ctx,
             types:InstanceMetricsPayload payload)
         returns http:Ok|http:BadRequest|http:Unauthorized|http:Forbidden|http:InternalServerError {
 
