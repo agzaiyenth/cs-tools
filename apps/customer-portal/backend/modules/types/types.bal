@@ -1506,8 +1506,8 @@ public type InstanceUsageEntry record {|
     ReferenceItem? product;
     # Associated deployed product information
     ReferenceItem? deployedProduct;
-    # Daily summaries ordered by date; empty if no rows in the date range
-    entity:InstanceDailySummary[] dailySummaries;
+    # Summaries ordered by date; empty if no rows in the date range
+    entity:InstanceSummary[] summaries;
 |};
 
 # Daily usage summary response.

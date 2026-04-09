@@ -1121,10 +1121,10 @@ public type InstanceMetricsResponse record {|
     string endDate;
 |};
 
-# Single daily summary entry for an instance.
-public type InstanceDailySummary record {|
-    # Date of the summary
-    string date;
+# Single summary entry for an instance.
+public type InstanceSummary record {|
+    # Period
+    string period;
     # Pivoted counts keyed by count type (e.g. TOTAL_USERS, TRANSACTION_COUNT)
     map<int> counts;
     json...;
@@ -1144,8 +1144,8 @@ public type InstanceUsageEntry record {|
     ReferenceTableItem? product;
     # Associated deployed product information
     ReferenceTableItem? deployedProduct;
-    # Daily summaries ordered by date; empty if no rows in the date range
-    InstanceDailySummary[] dailySummaries;
+    # Summaries ordered by date; empty if no rows in the date range
+    InstanceSummary[] summaries;
     json...;
 |};
 
