@@ -18,13 +18,18 @@ import { type JSX } from "react";
 import ErrorPage from "./ErrorPage";
 import illustration from "@assets/error/error-403.svg";
 
-export default function Error403Page(): JSX.Element {
+interface Error403PageProps {
+  message?: string;
+}
+
+export default function Error403Page({
+  message,
+}: Error403PageProps): JSX.Element {
   return (
     <ErrorPage
       illustration={illustration}
       illustrationAlt="403 forbidden illustration"
-      title="403 - Forbidden"
-      description="You don't have permission to access this page. Contact your administrator if you believe this is a mistake."
+      description={message ?? "You don't have permission to access this page."}
     />
   );
 }
