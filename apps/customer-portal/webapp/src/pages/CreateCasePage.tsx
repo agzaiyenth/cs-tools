@@ -641,6 +641,14 @@ export default function CreateCasePage(): JSX.Element {
       reader.readAsDataURL(file);
     });
 
+  const failSubmit = useCallback(
+    (message: string) => {
+      showError(message);
+      setIsSubmitLocked(false);
+    },
+    [showError],
+  );
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!projectId) return;
@@ -650,19 +658,16 @@ export default function CreateCasePage(): JSX.Element {
     const titlePlain = htmlToPlainText(title).trim();
     const descriptionPlain = htmlToPlainText(description).trim();
     if (!titlePlain) {
-      showError("Please enter a case title.");
-      setIsSubmitLocked(false);
+      failSubmit("Please enter a case title.");
       return;
     }
     if (!descriptionPlain) {
-      showError("Please enter a description.");
-      setIsSubmitLocked(false);
+      failSubmit("Please enter a description.");
       return;
     }
 
     if (isSecurityReport && attachments.length === 0) {
-      showError("Please attach at least one security report file.");
-      setIsSubmitLocked(false);
+      failSubmit("Please attach at least one security report file.");
       return;
     }
 
@@ -672,15 +677,13 @@ export default function CreateCasePage(): JSX.Element {
       undefined,
     );
     if (!deploymentMatch) {
-      showError("Please select a deployment type.");
-      setIsSubmitLocked(false);
+      failSubmit("Please select a deployment type.");
       return;
     }
 
     const productId = resolveProductId(product, allDeploymentProducts);
     if (!productId) {
-      showError("Please select a product version.");
-      setIsSubmitLocked(false);
+      failSubmit("Please select a product version.");
       return;
     }
 
@@ -691,14 +694,12 @@ export default function CreateCasePage(): JSX.Element {
     if (!isSecurityReport) {
       issueTypeKey = resolveIssueTypeKey(issueType, filters?.issueTypes);
       if (!issueTypeKey) {
-        showError("Please select an issue type.");
-        setIsSubmitLocked(false);
+        failSubmit("Please select an issue type.");
         return;
       }
       const parsedSeverity = parseInt(severity, 10);
       if (Number.isNaN(parsedSeverity)) {
-        showError("Please select a severity.");
-        setIsSubmitLocked(false);
+        failSubmit("Please select a severity.");
         return;
       }
       severityKey = parsedSeverity;
@@ -722,8 +723,7 @@ export default function CreateCasePage(): JSX.Element {
           error instanceof Error && error.message
             ? error.message
             : "Failed to process attachments. Please try again.";
-        showError(message);
-        setIsSubmitLocked(false);
+        failSubmit(message);
         return;
       } finally {
         setIsPreparingAttachments(false);
@@ -765,20 +765,23 @@ export default function CreateCasePage(): JSX.Element {
 
         showSuccess("Case created successfully");
 
-        if (projectId) {
-          await triggerPostCreationApiCalls(
-            authFetch,
-            projectId,
-            CaseType.DEFAULT_CASE,
-          );
-          await refreshCaseQueriesAfterCreation(
-            queryClient,
-            projectId,
-            CaseType.DEFAULT_CASE,
-          );
+        try {
+          if (projectId) {
+            await triggerPostCreationApiCalls(
+              authFetch,
+              projectId,
+              CaseType.DEFAULT_CASE,
+            );
+            await refreshCaseQueriesAfterCreation(
+              queryClient,
+              projectId,
+              CaseType.DEFAULT_CASE,
+            );
+          }
+        } catch (err) {
+          logger.error("Failed to refresh case queries after creation", err);
         }
 
-        // Clean up sessionStorage safely
         try {
           sessionStorage.removeItem(STORAGE_KEY);
           sessionStorage.removeItem(CONVERSATION_ID_STORAGE_KEY);
@@ -789,13 +792,16 @@ export default function CreateCasePage(): JSX.Element {
           );
         }
 
-        // Refetch security vulnerabilities if this was a security report
-        if (isCreatedSecurityReport) {
-          navigate(
-            `/projects/${projectId}/security-center/security-report-analysis/${caseId}?tab=${SecurityTab.VULNERABILITIES}`,
-          );
-        } else {
-          navigate(`/projects/${projectId}/support/cases/${caseId}`);
+        try {
+          if (isCreatedSecurityReport) {
+            navigate(
+              `/projects/${projectId}/security-center/security-report-analysis/${caseId}?tab=${SecurityTab.VULNERABILITIES}`,
+            );
+          } else {
+            navigate(`/projects/${projectId}/support/cases/${caseId}`);
+          }
+        } finally {
+          setIsSubmitLocked(false);
         }
       },
       onError: (error) => {
