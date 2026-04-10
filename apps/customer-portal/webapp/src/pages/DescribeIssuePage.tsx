@@ -65,7 +65,7 @@ export default function DescribeIssuePage(): JSX.Element {
       ),
     [allProjectDeployments, projectDetails?.type?.label],
   );
-  const { productsByDeploymentId } =
+  const { productsByDeploymentId, isLoading: isLoadingDeploymentProducts } =
     useAllDeploymentProducts(projectDeployments);
   const envProducts = useMemo(
     () => buildEnvProducts(productsByDeploymentId, projectDeployments),
@@ -119,7 +119,8 @@ export default function DescribeIssuePage(): JSX.Element {
     showError,
   ]);
 
-  const isSubmitDisabled = !projectId || !plainText.trim();
+  const isSubmitDisabled =
+    !projectId || !plainText.trim() || isLoadingDeploymentProducts;
 
   return (
     <Box

@@ -213,6 +213,18 @@ export default function CreateServiceRequestPage(): JSX.Element {
     setAttachments([]);
   }, []);
 
+  useEffect(() => {
+    const depId = searchParams.get("deploymentId")?.trim();
+    if (!depId) return;
+    if (allProjectDeployments.some((d) => d.id === depId)) return;
+    if (
+      deploymentsQuery.hasNextPage &&
+      !deploymentsQuery.isFetchingNextPage
+    ) {
+      void deploymentsQuery.fetchNextPage();
+    }
+  }, [searchParams, allProjectDeployments, deploymentsQuery]);
+
   // For Cloud Support / Cloud Evaluation Support: auto-pick the first primary
   // production deployment so the hidden field still resolves to a valid value.
   useEffect(() => {
