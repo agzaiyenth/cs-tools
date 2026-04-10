@@ -230,12 +230,6 @@ export interface PatchCallRequest {
   durationInMinutes?: number;
 }
 
-// Request body for updating current user profile (PATCH /users/me).
-export interface PatchUserMeRequest {
-  phoneNumber?: string;
-  timeZone?: string;
-}
-
 // Request body for creating a project contact (POST /projects/:projectId/contacts).
 export interface CreateProjectContactRequest {
   contactEmail: string;
@@ -317,4 +311,21 @@ export interface CreateRegistryTokenRequest {
   robotName: string;
   tokenType: "User" | "Service";
   createdFor?: string;
+}
+
+// Request body for POST .../instances/search.
+export interface InstanceSearchRequest {
+  filters?: {
+    startDate?: string;
+    endDate?: string;
+  };
+  pagination?: PaginationRequest;
+}
+
+// Request body for POST .../instances/usages/search and POST .../instances/metrics/search.
+export interface InstanceMetricsRequest {
+  filters: {
+    startDate: string;
+    endDate: string;
+  };
 }

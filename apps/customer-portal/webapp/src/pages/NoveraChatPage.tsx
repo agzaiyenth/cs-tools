@@ -49,6 +49,7 @@ import {
   formatChatHistoryForClassification,
   buildEnvProducts,
 } from "@utils/caseCreation";
+import { filterDeploymentsForCaseCreation } from "@utils/subscriptionUtils";
 import { htmlToPlainText } from "@utils/richTextEditor";
 import type { ChatNavState, Message } from "@models/chatTypes";
 import ChatHeader from "@components/support/novera-ai-assistant/novera-chat-page/ChatHeader";
@@ -75,6 +76,7 @@ export default function NoveraChatPage(): JSX.Element {
   const initialUserMessage = navState?.initialUserMessage;
   const conversationResponse = navState?.conversationResponse;
   const navAccountId = navState?.accountId;
+  const chatNumber = navState?.chatNumber;
 
   const handleBack = () => {
     if (projectId) {
@@ -84,10 +86,18 @@ export default function NoveraChatPage(): JSX.Element {
     }
   };
 
-  const { data: projectDeployments } = usePostProjectDeploymentsSearchAll(
+  const { data: allProjectDeployments } = usePostProjectDeploymentsSearchAll(
     projectId || "",
   );
   const { data: projectDetails } = useGetProjectDetails(projectId || "");
+  const projectDeployments = useMemo(
+    () =>
+      filterDeploymentsForCaseCreation(
+        allProjectDeployments,
+        projectDetails?.type?.label,
+      ),
+    [allProjectDeployments, projectDetails?.type?.label],
+  );
   const { productsByDeploymentId, isLoading: isAllProductsLoading } =
     useAllDeploymentProducts(projectDeployments);
   const envProducts = useMemo(
@@ -605,6 +615,7 @@ export default function NoveraChatPage(): JSX.Element {
             onBack={handleBack}
             onCreateCase={handleCreateCase}
             isCreateCaseLoading={isCreateCaseLoading}
+            chatNumber={chatNumber}
           />
         </Box>
 

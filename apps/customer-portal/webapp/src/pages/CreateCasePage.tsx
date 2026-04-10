@@ -30,9 +30,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import useGetProjectFilters from "@api/useGetProjectFilters";
 import useGetProjectDetails from "@api/useGetProjectDetails";
 import { useAuthApiClient } from "@api/useAuthApiClient";
-import {
-  usePostProjectDeploymentsSearchInfinite,
-} from "@api/usePostProjectDeploymentsSearch";
+import { usePostProjectDeploymentsSearchInfinite } from "@api/usePostProjectDeploymentsSearch";
 import {
   extractDeploymentProducts,
   usePostDeploymentProductsSearchInfinite,
@@ -73,7 +71,11 @@ import {
   CaseType,
 } from "@constants/supportConstants";
 import { SecurityTab } from "@constants/securityConstants";
-import { shouldExcludeS0 } from "@utils/subscriptionUtils";
+import {
+  filterDeploymentsForCaseCreation,
+  shouldExcludeS0,
+  shouldRestrictToPrimaryProductionDeployments,
+} from "@utils/subscriptionUtils";
 import { escapeHtml, htmlToPlainText } from "@utils/richTextEditor";
 import UploadAttachmentModal from "@components/support/case-details/attachments-tab/UploadAttachmentModal";
 import { ROUTE_PREVIOUS_PAGE } from "@/constants/commonConstants";
@@ -160,13 +162,28 @@ export default function CreateCasePage(): JSX.Element {
   const attachmentIdCounterRef = useRef(0);
   const [isPreparingAttachments, setIsPreparingAttachments] = useState(false);
   const [isAttachmentModalOpen, setIsAttachmentModalOpen] = useState(false);
-  const deploymentsQuery = usePostProjectDeploymentsSearchInfinite(projectId || "", {
-    pageSize: 10,
-    enabled: !!projectId,
-  });
-  const projectDeployments = useMemo(
-    () => deploymentsQuery.data?.pages.flatMap((p) => p.deployments ?? []) ?? [],
+  const deploymentsQuery = usePostProjectDeploymentsSearchInfinite(
+    projectId || "",
+    {
+      pageSize: 10,
+      enabled: !!projectId,
+    },
+  );
+  const allProjectDeployments = useMemo(
+    () =>
+      deploymentsQuery.data?.pages.flatMap((p) => p.deployments ?? []) ?? [],
     [deploymentsQuery.data],
+  );
+  const isPrimaryProductionOnly = shouldRestrictToPrimaryProductionDeployments(
+    projectDetails?.type?.label,
+  );
+  const projectDeployments = useMemo(
+    () =>
+      filterDeploymentsForCaseCreation(
+        allProjectDeployments,
+        projectDetails?.type?.label,
+      ),
+    [allProjectDeployments, projectDetails?.type?.label],
   );
   const isDeploymentsLoading = deploymentsQuery.isLoading;
   const baseDeploymentOptions = getBaseDeploymentOptions(projectDeployments);
@@ -174,7 +191,8 @@ export default function CreateCasePage(): JSX.Element {
     () => resolveDeploymentMatch(deployment, projectDeployments, undefined),
     [deployment, projectDeployments],
   );
-  const selectedDeploymentId = selectedDeploymentMatch?.id ?? "";
+  const selectedDeploymentId =
+    selectedDeploymentMatch?.id ?? relatedCase?.deploymentId ?? "";
   const deploymentProductsQuery = usePostDeploymentProductsSearchInfinite(
     selectedDeploymentId,
     { pageSize: 10, enabled: !!selectedDeploymentId },
@@ -182,14 +200,13 @@ export default function CreateCasePage(): JSX.Element {
   const deploymentProductsLoading = deploymentProductsQuery.isLoading;
   const deploymentProductsError = deploymentProductsQuery.isError;
   const allDeploymentProducts = useMemo(() => {
-    const items = deploymentProductsQuery.data?.pages.flatMap((page) =>
-      extractDeploymentProducts(page),
-    ) ?? [];
+    const items =
+      deploymentProductsQuery.data?.pages.flatMap((page) =>
+        extractDeploymentProducts(page),
+      ) ?? [];
     return items.filter((item) => {
       const label = getDeploymentProductDisplayLabel(item);
-      return (
-        Boolean(label.trim()) && !isUnknownPlaceholderProductLabel(label)
-      );
+      return Boolean(label.trim()) && !isUnknownPlaceholderProductLabel(label);
     });
   }, [deploymentProductsQuery.data]);
   const baseProductOptions = getBaseProductOptions(allDeploymentProducts);
@@ -358,6 +375,18 @@ export default function CreateCasePage(): JSX.Element {
     setDeployment(value);
     setProduct("");
   }, []);
+
+  // For Cloud Support / Cloud Evaluation Support: auto-pick the first primary
+  // production deployment and keep it locked to that value.
+  useEffect(() => {
+    if (!isPrimaryProductionOnly) return;
+    if (!baseDeploymentOptions.length) return;
+    const first = baseDeploymentOptions[0];
+    if (!first) return;
+    setDeployment((prev) =>
+      baseDeploymentOptions.includes(prev) ? prev : first,
+    );
+  }, [isPrimaryProductionOnly, baseDeploymentOptions]);
 
   const handleProductChange = useCallback((value: string) => {
     setProduct(value);
@@ -665,7 +694,9 @@ export default function CreateCasePage(): JSX.Element {
       projectDeployments,
       undefined,
     );
-    if (!deploymentMatch) {
+    const resolvedDeploymentId =
+      deploymentMatch?.id ?? relatedCase?.deploymentId ?? "";
+    if (!resolvedDeploymentId) {
       showError("Please select a deployment type.");
       return;
     }
@@ -724,7 +755,7 @@ export default function CreateCasePage(): JSX.Element {
       type: isSecurityReport
         ? CaseType.SECURITY_REPORT_ANALYSIS
         : CaseType.DEFAULT_CASE,
-      deploymentId: String(deploymentMatch.id),
+      deploymentId: String(resolvedDeploymentId),
       description,
       issueTypeKey,
       deployedProductId: String(productId),
@@ -854,8 +885,12 @@ export default function CreateCasePage(): JSX.Element {
             isRelatedCaseMode={noAiMode}
             extraProductOptions={extraProductOptions}
             isDeploymentDisabled={!!relatedCase}
+            hideDeploymentField={isPrimaryProductionOnly}
             onLoadMoreDeployments={() => {
-              if (deploymentsQuery.hasNextPage && !deploymentsQuery.isFetchingNextPage) {
+              if (
+                deploymentsQuery.hasNextPage &&
+                !deploymentsQuery.isFetchingNextPage
+              ) {
                 void deploymentsQuery.fetchNextPage();
               }
             }}

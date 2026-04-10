@@ -655,6 +655,8 @@ public type InstanceSearchPayload record {|
 public type Instance record {|
     # ID
     entity:IdString id;
+    # Key
+    string key;
     # Instance name
     string instance;
     # Associated project information
@@ -987,6 +989,8 @@ public type CallRequestSearchPayload record {|
 public type CallRequest record {|
     # ID
     string id;
+    # Number of the call request
+    string number;
     # Associated case information
     ReferenceItem case;
     # Reason for the call request
@@ -997,6 +1001,8 @@ public type CallRequest record {|
     int durationMin;
     # Scheduled time for the call
     string? scheduleTime;
+    # Meeting link for the scheduled call
+    string? meetingLink;
     # Created date and time
     string createdOn;
     # Updated date and time
@@ -1449,4 +1455,75 @@ public type UsageStats record {|
     int deployedProductCount;
     # Instance count associated with the project
     int instanceCount;
+|};
+
+# Payload for fetching instance metrics.
+public type InstanceMetricsPayload record {|
+    # Filter criteria
+    record {|
+        # Start date
+        entity:Date startDate;
+        # End date
+        entity:Date endDate;
+    |} filters;
+|};
+
+# Per-node metrics entry.
+public type InstanceMetric record {|
+    # ID
+    string instanceId;
+    # Instance key
+    string instanceKey;
+    # Associated project information
+    ReferenceItem? project;
+    # Associated deployment information
+    ReferenceItem? deployment;
+    # Associated product information
+    ReferenceItem? product;
+    # Associated deployed product information
+    ReferenceItem? deployedProduct;
+    # Data points ordered newest to oldest; empty if no changes in window
+    entity:InstanceDataPoint[] dataPoints;
+|};
+
+# Metrics response.
+public type InstanceMetricsResponse record {|
+    # List of per-node metric entries
+    InstanceMetric[] metrics;
+    # Total number of nodes
+    int totalInstances;
+    # Start date of the queried range
+    string startDate;
+    # End date of the queried range
+    string endDate;
+|};
+
+# Per-node usage entry.
+public type InstanceUsageEntry record {|
+    # ID
+    string instanceId;
+    # Instance key
+    string instanceKey;
+    # Associated project information
+    ReferenceItem? project;
+    # Associated deployment information
+    ReferenceItem? deployment;
+    # Associated product information
+    ReferenceItem? product;
+    # Associated deployed product information
+    ReferenceItem? deployedProduct;
+    # Summaries ordered by date; empty if no rows in the date range
+    entity:InstanceSummary[] periodSummaries;
+|};
+
+# Usage summary response.
+public type InstanceUsageResponse record {|
+    # List of per-node usage entries
+    InstanceUsageEntry[] usages;
+    # Total number of nodes
+    int totalInstances;
+    # Start date of the queried range
+    string startDate;
+    # End date of the queried range
+    string endDate;
 |};
