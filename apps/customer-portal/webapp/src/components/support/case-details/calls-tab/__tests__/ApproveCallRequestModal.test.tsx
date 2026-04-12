@@ -20,7 +20,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { usePatchCallRequest } from "@api/usePatchCallRequest";
 import ApproveCallRequestModal from "@case-details-calls/ApproveCallRequestModal";
-import type { CallRequest } from "@models/responses";
+import type { CallRequest } from "@/types/calls";
 
 vi.mock("@api/usePatchCallRequest");
 
