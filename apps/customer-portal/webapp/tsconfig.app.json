@@ -42,7 +42,6 @@
       "@context/*": ["src/context/*"],
       "@hooks/*": ["src/hooks/*"],
       "@layouts/*": ["src/layouts/*"],
-      "@models/*": ["src/models/*"],
       "@pages/*": ["src/pages/*"],
       "@providers/*": ["src/providers/*"],
       "@utils/*": ["src/utils/*"],
