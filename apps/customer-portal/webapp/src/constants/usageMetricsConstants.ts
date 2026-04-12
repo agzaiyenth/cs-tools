@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import type { UsageTimeRangePreset } from "@models/usageMetrics.types";
+import type { UsageTimeRangePreset } from "@/types/usage";
 
 export const USAGE_LINE_CHART_MARGIN = {
   top: 5,
