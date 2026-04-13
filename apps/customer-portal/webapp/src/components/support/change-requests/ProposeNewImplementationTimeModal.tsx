@@ -146,7 +146,11 @@ export default function ProposeNewImplementationTimeModal({
             borderColor: "divider",
           }}
         >
-          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5 }}>
+          <Typography
+            variant="subtitle2"
+            color="text.secondary"
+            sx={{ mb: 1.5 }}
+          >
             Current Schedule
           </Typography>
           <Box
@@ -157,7 +161,11 @@ export default function ProposeNewImplementationTimeModal({
             }}
           >
             <Box>
-              <Typography variant="caption" color="text.secondary" display="block">
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+              >
                 Start Date & Time
               </Typography>
               <Typography variant="body2" color="text.primary">
@@ -165,7 +173,11 @@ export default function ProposeNewImplementationTimeModal({
               </Typography>
             </Box>
             <Box>
-              <Typography variant="caption" color="text.secondary" display="block">
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+              >
                 End Date & Time
               </Typography>
               <Typography variant="body2" color="text.primary">
@@ -197,7 +209,9 @@ export default function ProposeNewImplementationTimeModal({
           />
         </Box>
       </DialogContent>
-      <DialogActions sx={{ px: 3, py: 2, borderTop: 1, borderColor: "divider" }}>
+      <DialogActions
+        sx={{ px: 3, py: 2, borderTop: 1, borderColor: "divider" }}
+      >
         <Button variant="outlined" color="inherit" onClick={handleClose}>
           Cancel
         </Button>
