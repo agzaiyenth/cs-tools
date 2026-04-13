@@ -157,7 +157,7 @@ export default function OutstandingChangeRequestsList({
               <Typography variant="caption" color="text.secondary">—</Typography>
             )}
             <Typography variant="caption" color="text.secondary">
-              {formatRelativeTime(cr.createdOn)}
+              {formatRelativeTime(cr.createdOn ?? undefined)}
             </Typography>
           </Form.CardActions>
         </Form.CardButton>

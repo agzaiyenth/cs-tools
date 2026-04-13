@@ -202,7 +202,7 @@ export default function OutstandingCasesList({
                   ) : null;
                 })()}
                 <Typography variant="caption" color="text.secondary">
-                  {formatRelativeTime(c.createdOn)}
+                  {formatRelativeTime(c.createdOn ?? undefined)}
                 </Typography>
               </Box>
             </Form.CardActions>
