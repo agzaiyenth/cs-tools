@@ -59,7 +59,7 @@ import GenerateTokenModal from "@components/settings/GenerateTokenModal";
 import DeleteTokenModal from "@components/settings/DeleteTokenModal";
 import RegenerateTokenModal from "@components/settings/RegenerateTokenModal";
 import { useSearchRegistryTokens } from "@api/useSearchRegistryTokens";
-import type { RegistryToken } from "@/types/registryTokens";
+import { type RegistryToken, RegistryTokenType } from "@/types/registryTokens";
 
 /** Placeholder for empty/null values. */
 const DASH = "--";
@@ -176,11 +176,11 @@ export default function SettingsRegistryTokens({
   } = useSearchRegistryTokens(projectId);
   const isTableLoading = isLoading || isFetching;
   const userTokens = useMemo(
-    () => allTokens.filter((t) => t.tokenType === "User"),
+    () => allTokens.filter((t) => t.tokenType === RegistryTokenType.USER),
     [allTokens],
   );
   const serviceTokens = useMemo(
-    () => allTokens.filter((t) => t.tokenType === "Service"),
+    () => allTokens.filter((t) => t.tokenType === RegistryTokenType.SERVICE),
     [allTokens],
   );
 
@@ -626,7 +626,7 @@ export default function SettingsRegistryTokens({
         open={generateModalOpen}
         onClose={() => setGenerateModalOpen(false)}
         projectId={projectId}
-        tokenType={displayTokenTab === "service" ? "Service" : "User"}
+        tokenType={displayTokenTab === "service" ? RegistryTokenType.SERVICE : RegistryTokenType.USER}
         isAdmin={isAdmin}
       />
 

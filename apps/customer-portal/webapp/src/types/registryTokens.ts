@@ -16,10 +16,10 @@
 
 import type { AuditMetadata } from "@/types/common";
 
-// Item type for a registry token list item.
+// Enum for registry token types.
 export enum RegistryTokenType {
-  User = "User",
-  Service = "Service",
+  USER = "User",
+  SERVICE = "Service",
 }
 
 // Item type for a registry token permission.
