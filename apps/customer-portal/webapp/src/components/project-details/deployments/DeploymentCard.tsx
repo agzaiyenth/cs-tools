@@ -61,8 +61,8 @@ export default function DeploymentCard({
   const patchDeployment = usePatchDeployment();
   const downloadLicense = useDownloadDeploymentLicense();
 
-  const createdAtStr = formatProjectDateTime(createdOn);
-  const updatedAtStr = formatProjectDateTime(updatedOn);
+  const createdAtStr = formatProjectDateTime(createdOn ?? "");
+  const updatedAtStr = formatProjectDateTime(updatedOn ?? "");
 
   const handleDownloadLicense = () => {
     downloadLicense.mutate({
