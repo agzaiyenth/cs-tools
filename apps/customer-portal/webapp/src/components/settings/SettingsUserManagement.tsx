@@ -87,7 +87,12 @@ export default function SettingsUserManagement({
   const [removeTarget, setRemoveTarget] = useState<ProjectContact | null>(null);
   const [editTarget, setEditTarget] = useState<ProjectContact | null>(null);
 
-  const { data: contacts = [], isLoading, isFetching, error } = useGetProjectContacts(projectId);
+  const {
+    data: contacts = [],
+    isLoading,
+    isFetching,
+    error,
+  } = useGetProjectContacts(projectId);
   const postContact = usePostProjectContact(projectId);
   const deleteContact = useDeleteProjectContact(projectId);
   const patchContact = usePatchProjectContact(projectId);
@@ -161,7 +166,9 @@ export default function SettingsUserManagement({
             showSuccess("Security contact updated");
           },
           onError: (err) => {
-            showError(err?.message ?? "Failed to update user. Please try again.");
+            showError(
+              err?.message ?? "Failed to update user. Please try again.",
+            );
           },
         },
       );
@@ -194,8 +201,8 @@ export default function SettingsUserManagement({
                   <Crown size={20} />
                 )}
               </Box> */}
-              {/* <Box> */}
-                {/* <Typography variant="h4">
+      {/* <Box> */}
+      {/* <Typography variant="h4">
                   {isEffectiveLoading ? (
                     <Skeleton variant="text" width={24} height={32} />
                   ) : error ? (
@@ -204,15 +211,15 @@ export default function SettingsUserManagement({
                     stats.admins
                   )}
                 </Typography> */}
-                {/* <Typography variant="caption" color="text.secondary">
+      {/* <Typography variant="caption" color="text.secondary">
                   {isEffectiveLoading ? (
                     <Skeleton variant="text" width={48} height={16} />
                   ) : (
                     "Admins"
                   )}
                 </Typography> */}
-              {/* </Box> */}
-            {/* </Box>
+      {/* </Box> */}
+      {/* </Box>
           </Card>
         </Grid>
         <Grid size={{ xs: 12, sm: 4 }}>
@@ -298,7 +305,13 @@ export default function SettingsUserManagement({
       </Grid> */}
 
       {/* Search and Add User */}
-      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1.5 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          gap: 1.5,
+        }}
+      >
         <TextField
           fullWidth
           size="small"
@@ -344,7 +357,9 @@ export default function SettingsUserManagement({
               Array.from({ length: 3 }).map((_, i) => (
                 <TableRow key={i}>
                   <TableCell>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Box
+                      sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+                    >
                       <Skeleton variant="circular" width={40} height={40} />
                       <Box>
                         <Skeleton variant="text" width={100} height={20} />
@@ -352,11 +367,21 @@ export default function SettingsUserManagement({
                       </Box>
                     </Box>
                   </TableCell>
-                  <TableCell><Skeleton variant="rounded" width={70} height={24} /></TableCell>
-                  <TableCell><Skeleton variant="rounded" width={60} height={24} /></TableCell>
+                  <TableCell>
+                    <Skeleton variant="rounded" width={70} height={24} />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="rounded" width={60} height={24} />
+                  </TableCell>
                   {canAddOrRemoveUsers && (
                     <TableCell>
-                      <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 0.5,
+                          justifyContent: "flex-end",
+                        }}
+                      >
                         <Skeleton variant="circular" width={32} height={32} />
                       </Box>
                     </TableCell>
@@ -389,13 +414,17 @@ export default function SettingsUserManagement({
               filteredContacts.map((contact) => (
                 <TableRow key={contact.id} hover>
                   <TableCell>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Box
+                      sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+                    >
                       <Box
                         sx={{
                           width: 40,
                           height: 40,
                           borderRadius: "50%",
-                          bgcolor: getAvatarColor(contact.id ?? contact.email ?? ""),
+                          bgcolor: getAvatarColor(
+                            contact.id ?? contact.email ?? "",
+                          ),
                           color: "white",
                           display: "flex",
                           alignItems: "center",
@@ -404,13 +433,19 @@ export default function SettingsUserManagement({
                           fontWeight: 600,
                         }}
                       >
-                        {getInitials(contact.firstName, contact.lastName, contact.email)}
+                        {getInitials(
+                          contact.firstName,
+                          contact.lastName,
+                          contact.email,
+                        )}
                       </Box>
                       <Box>
                         <Typography variant="body2">
                           {contact.firstName && contact.lastName
                             ? `${contact.firstName} ${contact.lastName}`
-                            : contact.firstName || contact.lastName || NULL_PLACEHOLDER}
+                            : contact.firstName ||
+                              contact.lastName ||
+                              NULL_PLACEHOLDER}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           {contact.email ?? NULL_PLACEHOLDER}
@@ -444,7 +479,13 @@ export default function SettingsUserManagement({
                   </TableCell>
                   {canAddOrRemoveUsers && (
                     <TableCell align="right">
-                      <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 0.5,
+                          justifyContent: "flex-end",
+                        }}
+                      >
                         {!contact.isCsIntegrationUser && (
                           <Tooltip title="Edit user">
                             <span>
@@ -489,7 +530,10 @@ export default function SettingsUserManagement({
           borderColor: alpha(theme.palette.info.main, 0.2),
         }}
       >
-        <Typography variant="h6" sx={{ mb: 4, display: "flex", alignItems: "center", gap: 1 }}>
+        <Typography
+          variant="h6"
+          sx={{ mb: 4, display: "flex", alignItems: "center", gap: 1 }}
+        >
           <Shield size={20} color={theme.palette.text.primary} />
           Role Permissions
         </Typography>
@@ -499,18 +543,38 @@ export default function SettingsUserManagement({
             const roleColor =
               role.paletteKey === "secondary"
                 ? (colors.purple?.[600] ?? theme.palette.primary.main)
-                : (theme.palette[role.paletteKey]?.main ?? theme.palette.text.primary);
+                : (theme.palette[role.paletteKey]?.main ??
+                  theme.palette.text.primary);
             return (
               <Grid key={role.id} size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 2,
+                    }}
+                  >
                     <RoleIcon size={18} color={roleColor} />
                     <Typography variant="subtitle2">{role.label}</Typography>
                   </Box>
-                  <Box component="ul" sx={{ m: 0, pl: 2.5, listStyle: "disc", "& li": { mb: 0.5 } }}>
+                  <Box
+                    component="ul"
+                    sx={{
+                      m: 0,
+                      pl: 2.5,
+                      listStyle: "disc",
+                      "& li": { mb: 0.5 },
+                    }}
+                  >
                     {role.permissions.map((p) => (
                       <li key={p}>
-                        <Typography variant="caption" color="text.secondary" component="span">
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          component="span"
+                        >
                           {p}
                         </Typography>
                       </li>
