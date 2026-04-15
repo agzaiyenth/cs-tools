@@ -23,9 +23,9 @@ import { useAsgardeo } from "@asgardeo/react";
 import { useAuthApiClient } from "@api/useAuthApiClient";
 import { ApiError } from "@api/ApiError";
 import { useLogger } from "@hooks/useLogger";
-import { ApiQueryKeys } from "@constants/apiConstants";
-import type { SearchProjectsResponse, ProjectListItem } from "@/types/projects";
-import type { SearchProjectsRequest } from "@/types/projects";
+import { ApiQueryKeys } from "@api/apiConstants";
+import type { SearchProjectsResponse, ProjectListItem } from "@features/project-hub/types/projects";
+import type { SearchProjectsRequest } from "@features/project-hub/types/projects";
 
 interface UseInfiniteProjectsParams {
   searchQuery?: string;

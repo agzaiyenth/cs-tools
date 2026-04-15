@@ -19,8 +19,8 @@ import { useAsgardeo } from "@asgardeo/react";
 import { useAuthApiClient } from "@api/useAuthApiClient";
 import { ApiError } from "@api/ApiError";
 import { useLogger } from "@hooks/useLogger";
-import { ApiQueryKeys } from "@constants/apiConstants";
-import type { ProjectDetails } from "@/types/projects";
+import { ApiQueryKeys } from "@api/apiConstants";
+import type { ProjectDetails } from "@features/project-hub/types/projects";
 
 /**
  * Custom hook to fetch detailed project information by ID.
