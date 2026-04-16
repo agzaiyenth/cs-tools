@@ -14,48 +14,54 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Chip, Skeleton, Typography } from "@wso2/oxygen-ui";
+import { Box, Typography, Chip, Skeleton } from "@wso2/oxygen-ui";
 import type { JSX } from "react";
+import ErrorIndicator from "@components/error-indicator/ErrorIndicator";
 
-export interface ProjectNameProps {
+interface ProjectNameProps {
   name: string;
   projectKey: string;
   isLoading?: boolean;
+  isError?: boolean;
 }
 
-/**
- * Project display name and key chips.
- *
- * @param props - Name, key, loading.
- * @returns {JSX.Element} Label row.
- */
-export default function ProjectName({
+const ProjectName = ({
   name,
   projectKey,
   isLoading,
-}: ProjectNameProps): JSX.Element {
+  isError,
+}: ProjectNameProps): JSX.Element => {
   return (
-    <Box sx={{ mb: 2 }}>
+    <Box>
       <Typography
         variant="body2"
         fontWeight="medium"
-        sx={{ display: "block", mb: 1 }}
+        sx={{ display: "block", mb: 0.5 }}
       >
         Project Name
       </Typography>
-      {isLoading ? (
-        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-          <Skeleton variant="rounded" width={160} height={28} />
-          <Skeleton variant="rounded" width={80} height={28} />
-        </Box>
-      ) : (
-        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
-          <Typography variant="body1" component="span">
-            {name || "--"}
-          </Typography>
-          <Chip label={projectKey || "--"} size="small" variant="outlined" />
-        </Box>
-      )}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        {isLoading ? (
+          <>
+            <Skeleton variant="text" width={150} />
+            <Skeleton variant="rounded" width={60} height={24} />
+          </>
+        ) : isError ? (
+          <ErrorIndicator entityName="project name" />
+        ) : (
+          <>
+            <Typography variant="body2">{name}</Typography>
+            <Chip
+              label={projectKey}
+              size="small"
+              variant="outlined"
+              sx={{ typography: "caption" }}
+            />
+          </>
+        )}
+      </Box>
     </Box>
   );
-}
+};
+
+export default ProjectName;
