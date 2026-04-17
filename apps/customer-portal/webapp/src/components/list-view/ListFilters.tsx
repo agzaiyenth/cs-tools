@@ -67,6 +67,7 @@ export default function ListFilters({
   onFilterChange,
   excludeS0 = false,
   restrictSeverityToLow = false,
+  hideSeverityFilter = false,
   onLoadMoreDeployments,
   hasMoreDeployments = false,
   isFetchingMoreDeployments = false,
@@ -82,6 +83,9 @@ export default function ListFilters({
   return (
     <Grid container spacing={2} sx={{ mt: 1 }}>
       {ALL_CASES_FILTER_DEFINITIONS.map((def) => {
+        if (hideSeverityFilter && def.id === "severity") {
+          return null;
+        }
         if (def.metadataKey === "severities" && restrictSeverityToLow) {
           return null;
         }
