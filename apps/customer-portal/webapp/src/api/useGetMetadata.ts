@@ -16,10 +16,10 @@
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useAuthApiClient } from "@api/useAuthApiClient";
+import { useAuthApiClient } from "@utils/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
 import { ApiQueryKeys } from "@constants/apiConstants";
-import type { PortalMetadataResponse } from "@models/responses";
+import type { PortalMetadataResponse } from "@features/project-hub/types/projects";
 
 /**
  * Fetches global metadata used by customer portal (time zones, etc).
@@ -42,7 +42,9 @@ export default function useGetMetadata(): UseQueryResult<
         throw new Error("CUSTOMER_PORTAL_BACKEND_BASE_URL is not configured");
       }
 
-      const response = await authFetch(`${baseUrl}/metadata`, { method: "GET" });
+      const response = await authFetch(`${baseUrl}/metadata`, {
+        method: "GET",
+      });
       if (!response.ok) {
         throw new Error(`Error fetching metadata: ${response.statusText}`);
       }
@@ -58,4 +60,3 @@ export default function useGetMetadata(): UseQueryResult<
     gcTime: 10 * 60 * 1000,
   });
 }
-

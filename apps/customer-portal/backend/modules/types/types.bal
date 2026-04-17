@@ -125,9 +125,11 @@ public type CaseResponse record {|
     ReferenceItem? 'type;
     # Assigned engineer
     ReferenceItem? assignedEngineer;
-    # Related case information (if the case is related to an existing case)
+    # Parent case information
     ReferenceItem? parentCase;
-    # Conversation information (if the case is related to a conversation)
+    # Related case information
+    ReferenceItem? relatedCase;
+    # Conversation information
     ReferenceItem? conversation;
     # Deployment information
     record {
@@ -200,9 +202,11 @@ public type CaseMetaData record {|
     ReferenceItem? deployedProduct;
     # Assigned engineer
     ReferenceItem? assignedEngineer;
-    # Related case information (if the case is related to an existing case)
+    # Parent case information
     ReferenceItem? parentCase;
-    # Conversation information (if the case is related to a conversation)
+    # Related case information
+    ReferenceItem? relatedCase;
+    # Conversation information
     ReferenceItem? conversation;
 |};
 
@@ -546,6 +550,8 @@ public type Attachment record {|
     string createdOn;
     # Download URL
     string? downloadUrl;
+    # Preview URL for image attachments
+    string? previewUrl;
     # Description of the attachment
     string? description;
 |};
@@ -1030,16 +1036,6 @@ public type CallRequestCreatePayload record {|
     int durationInMinutes;
 |};
 
-# Request payload for updating a call request.
-public type CallRequestUpdatePayload record {|
-    # State key
-    int stateKey;
-    # Reason for the requested call cancellation
-    string cancellationReason?;
-    # New preferred UTC times for the call (mandatory when stateKey is 2)
-    entity:DateTime[] utcTimes?;
-|};
-
 # Product version data.
 public type ProductVersion record {|
     # ID
@@ -1082,6 +1078,8 @@ public type TimeCard record {|
     ReferenceItem? state;
     # User who approved the time card
     ReferenceItem? approvedBy;
+    # User who reported the time card
+    ReferenceItem? reportedBy;
     # Associated project
     ReferenceItem? project;
     # Associated case

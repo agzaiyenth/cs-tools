@@ -229,6 +229,8 @@ paths:
           description: InternalServerError
         "403":
           description: Forbidden
+        "409":
+          description: Conflict
   /projects/{projectId}/deployments/{deploymentId}:
     patch:
       summary: Update an existing deployment for a project.
@@ -2684,6 +2686,7 @@ components:
       - downloadUrl
       - id
       - name
+      - previewUrl
       - size
       - type
       type: object
@@ -2710,6 +2713,10 @@ components:
         downloadUrl:
           type: string
           description: Download URL
+          nullable: true
+        previewUrl:
+          type: string
+          description: Preview URL for image attachments
           nullable: true
         description:
           type: string
@@ -2843,12 +2850,13 @@ components:
           description: Reason for the requested call cancellation
         utcTimes:
           type: array
-          description: New preferred UTC times for the call
+          description: New preferred UTC times for the call (mandatory when stateKey
+            is 2)
           items:
             $ref: '#/components/schemas/DateTime'
         durationInMinutes:
           type: integer
-          description: New preferred duration for the call
+          description: Duration in minutes
           format: int64
       additionalProperties: false
       description: Request payload for updating a call request.
@@ -3019,7 +3027,7 @@ components:
           type: integer
           description: Severity key (required for DEFAULT_CASE)
           format: int64
-        parentCaseId:
+        relatedCaseId:
           $ref: '#/components/schemas/IdString'
         conversationId:
           $ref: '#/components/schemas/IdString'
@@ -3053,6 +3061,7 @@ components:
         - deployment
         - parentCase
         - project
+        - relatedCase
         - slaResponseTime
         - type
         - updatedOn
@@ -3081,13 +3090,17 @@ components:
             allOf:
             - $ref: '#/components/schemas/ReferenceItem'
           parentCase:
-            description: Related case information (if the case is related to an existing
-              case)
+            description: Parent case information
+            nullable: true
+            allOf:
+            - $ref: '#/components/schemas/ReferenceItem'
+          relatedCase:
+            description: Related case information
             nullable: true
             allOf:
             - $ref: '#/components/schemas/ReferenceItem'
           conversation:
-            description: Conversation information (if the case is related to a conversation)
+            description: Conversation information
             nullable: true
             allOf:
             - $ref: '#/components/schemas/ReferenceItem'

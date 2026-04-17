@@ -18,7 +18,7 @@ import { useIdleTimer } from "react-idle-timer";
 import { useEffect, useState, type JSX, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { useAsgardeo } from "@asgardeo/react";
-import SessionWarningDialog from "@components/common/SessionWarningDialog";
+import SessionWarningDialog from "@components/SessionWarningDialog";
 import {
   IDLE_TIMEOUT_MS,
   IDLE_PROMPT_BEFORE_MS,
@@ -49,16 +49,8 @@ export default function IdleTimeoutProvider({
     }
   };
 
-  const onIdle = () => {
-    if (isSignedIn && !isLoading) {
-      setSessionWarningOpen(false);
-      signOut().finally(() => navigate("/home"));
-    }
-  };
-
   const { activate } = useIdleTimer({
     onPrompt,
-    onIdle,
     timeout: IDLE_TIMEOUT_MS,
     promptBeforeIdle: IDLE_PROMPT_BEFORE_MS,
     throttle: IDLE_THROTTLE_MS,

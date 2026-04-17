@@ -22,14 +22,14 @@ import {
   type UseQueryResult,
 } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useAuthApiClient } from "@api/useAuthApiClient";
+import { useAuthApiClient } from "@utils/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
 import { ApiQueryKeys } from "@constants/apiConstants";
-import type { DeploymentSearchRequest } from "@models/requests";
+import type { DeploymentSearchRequest } from "@features/project-details/types/deployments";
 import type {
   ProjectDeploymentItem,
   ProjectDeploymentsListResponse,
-} from "@models/responses";
+} from "@features/project-details/types/deployments";
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -103,7 +103,13 @@ export function usePostProjectDeploymentsSearchInfinite(
   } = options ?? {};
 
   return useInfiniteQuery<ProjectDeploymentsListResponse, Error>({
-    queryKey: [ApiQueryKeys.DEPLOYMENTS, projectId, "search", request, pageSize],
+    queryKey: [
+      ApiQueryKeys.DEPLOYMENTS,
+      projectId,
+      "search",
+      request,
+      pageSize,
+    ],
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       postDeploymentsSearchPage({
@@ -161,7 +167,13 @@ export function usePostProjectDeploymentsSearchAll(
   } = options ?? {};
 
   return useQuery<ProjectDeploymentItem[], Error>({
-    queryKey: [ApiQueryKeys.DEPLOYMENTS, projectId, "search-all", request, pageSize],
+    queryKey: [
+      ApiQueryKeys.DEPLOYMENTS,
+      projectId,
+      "search-all",
+      request,
+      pageSize,
+    ],
     queryFn: async () => {
       const results: ProjectDeploymentItem[] = [];
       let offset = 0;
@@ -206,4 +218,3 @@ export function usePostProjectDeploymentsSearchAll(
     staleTime: 5 * 60 * 1000,
   });
 }
-

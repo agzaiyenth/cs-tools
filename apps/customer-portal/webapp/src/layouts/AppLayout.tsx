@@ -27,16 +27,16 @@ import { useAsgardeo } from "@asgardeo/react";
 import { useLoader } from "@context/linear-loader/LoaderContext";
 import { useLocation, Outlet } from "react-router";
 import IdleTimeoutProvider from "@providers/IdleTimeoutProvider";
-import GlobalNotificationBanner from "@components/common/notification-banner/GlobalNotificationBanner";
-import Footer from "@components/common/footer/Footer";
-import Header from "@components/common/header/Header";
-import SideBar from "@components/common/side-nav-bar/SideBar";
-import NoveraFloatingChat from "@components/common/novera-floating-chat/NoveraFloatingChat";
+import GlobalNotificationBanner from "@components/notification-banner/GlobalNotificationBanner";
+import Footer from "@components/footer/Footer";
+import Header from "@components/header/Header";
+import SideBar from "@components/side-nav-bar/SideBar";
+import NoveraFloatingChat from "@components/novera-floating-chat/NoveraFloatingChat";
 import { FloatingNoveraVisibilityProvider } from "@context/floating-novera-visibility/FloatingNoveraVisibilityContext";
 import {
   getSidebarCollapsed,
   setSidebarCollapsed,
-} from "@utils/settingsStorage";
+} from "@features/settings/utils/settingsStorage";
 
 /**
  * AppLayout component.
@@ -45,17 +45,15 @@ import {
  */
 interface AppLayoutProps {
   children?: ReactNode;
-  authCheckPending?: boolean;
 }
 
 /**
  * AppLayout component providing the main structure, navigation, and global UI elements.
  */
-export default function AppLayout({ children, authCheckPending }: AppLayoutProps): JSX.Element {
+export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
   const location = useLocation();
   const mainContentRef = useRef<HTMLDivElement>(null);
   const { isLoading: isAuthLoading } = useAsgardeo();
-  const showLoader = isAuthLoading || (authCheckPending ?? false);
 
   // Scroll to top on route change
   useEffect(() => {
@@ -75,7 +73,7 @@ export default function AppLayout({ children, authCheckPending }: AppLayoutProps
 
   // Animate loading message during authentication
   useEffect(() => {
-    if (!showLoader) return;
+    if (!isAuthLoading) return;
 
     setLoadingMessage("Authenticating…");
 
@@ -197,18 +195,19 @@ export default function AppLayout({ children, authCheckPending }: AppLayoutProps
                 sx={{
                   flex: 1,
                   minHeight: 0,
+                  minWidth: 0,
                   display: "flex",
                   flexDirection: "column",
                   overflow: "auto",
                   ...(isDetailsStylePage ? { minHeight: "60vh" } : {}),
-                  ...(showLoader
+                  ...(isAuthLoading
                     ? { p: 0 }
                     : isDetailsStylePage
                       ? { px: 0, pb: 0, pt: 0 }
                       : { p: 3 }),
                 }}
               >
-                {showLoader ? (
+                {isAuthLoading ? (
                   <Box
                     sx={{
                       flex: 1,

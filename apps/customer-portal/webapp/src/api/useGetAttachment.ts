@@ -16,8 +16,8 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { useAuthApiClient } from "@api/useAuthApiClient";
-import type { AttachmentDownloadResponse } from "@models/responses";
+import { useAuthApiClient } from "@utils/useAuthApiClient";
+import type { AttachmentDownloadResponse } from "@features/support/types/attachments";
 
 /** Input for GET /attachments/:id or inline list payload. */
 export interface DownloadBackendAttachmentInput {
@@ -112,9 +112,7 @@ async function downloadAttachmentThroughBackend(
 
 export interface UseGetAttachmentResult {
   /** Starts download (GET /attachments/:id or inline content). */
-  downloadAttachment: (
-    input: DownloadBackendAttachmentInput,
-  ) => Promise<void>;
+  downloadAttachment: (input: DownloadBackendAttachmentInput) => Promise<void>;
   /** True while a download request is in flight. */
   isDownloading: boolean;
   /** Attachment id currently being downloaded, if any. */
