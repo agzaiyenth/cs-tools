@@ -22,7 +22,7 @@ import {
 import { useAsgardeo } from "@asgardeo/react";
 import { useAuthApiClient } from "@/utils/useAuthApiClient";
 import { useLogger } from "@hooks/useLogger";
-import { ApiQueryKeys } from "@/constants/apiConstants";
+import { ApiQueryKeys } from "@constants/apiConstants";
 import type { CreateCallRequest } from "@features/support/types/calls";
 import type { CreateCallResponse } from "@features/support/types/calls";
 
