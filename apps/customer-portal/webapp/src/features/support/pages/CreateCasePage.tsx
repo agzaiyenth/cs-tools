@@ -29,7 +29,7 @@ import { useLocation, useNavigate, useParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import useGetProjectFilters from "@api/useGetProjectFilters";
 import useGetProjectDetails from "@api/useGetProjectDetails";
-import { useAuthApiClient } from "@/utils/useAuthApiClient";
+import { useAuthApiClient } from "@utils/useAuthApiClient";
 import { usePostProjectDeploymentsSearchInfinite } from "@api/usePostProjectDeploymentsSearch";
 import {
   extractDeploymentProducts,
@@ -76,7 +76,7 @@ import {
   shouldExcludeS0,
   shouldForceSeverityS4,
   shouldRestrictToPrimaryProductionDeployments,
-} from "@/utils/permission";
+} from "@utils/permission";
 import {
   escapeHtml,
   htmlToPlainText,

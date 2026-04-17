@@ -22,7 +22,7 @@ import useGetProjectFilters from "@api/useGetProjectFilters";
 import useGetProjectCases from "@api/useGetProjectCases";
 import { useLoader } from "@context/linear-loader/LoaderContext";
 import { CaseType } from "@features/support/constants/supportConstants";
-import { shouldExcludeS0, shouldForceSeverityS4 } from "@/utils/permission";
+import { shouldExcludeS0, shouldForceSeverityS4 } from "@utils/permission";
 import { isS0Case } from "@features/support/utils/support";
 import { hasListSearchOrFilters } from "@features/support/utils/support";
 import type { AllCasesFilterValues } from "@features/support/types/cases";

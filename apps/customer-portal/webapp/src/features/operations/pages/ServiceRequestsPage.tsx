@@ -48,7 +48,7 @@ import {
   getProjectPermissions,
   shouldExcludeS0,
   shouldForceSeverityS4,
-} from "@/utils/permission";
+} from "@utils/permission";
 import { SortOrder } from "@/types/common";
 import type { AllCasesFilterValues } from "@features/support/types/cases";
 import ListStatGrid from "@components/list-view/ListStatGrid";

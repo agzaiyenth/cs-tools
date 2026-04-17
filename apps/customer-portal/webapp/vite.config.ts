@@ -77,6 +77,7 @@ export default defineConfig({
       "@layouts": fileURLToPath(new URL("./src/layouts", import.meta.url)),
       "@features": fileURLToPath(new URL("./src/features", import.meta.url)),
       "@providers": fileURLToPath(new URL("./src/providers", import.meta.url)),
+      "@utils": fileURLToPath(new URL("./src/utils", import.meta.url)),
       "@time-tracking": fileURLToPath(
         new URL(
           "./src/features/project-details/components/time-tracking",

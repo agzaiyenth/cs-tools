@@ -34,7 +34,7 @@ import useGetProjectCases from "@api/useGetProjectCases";
 import useGetChangeRequests from "@features/operations/api/useGetChangeRequests";
 import { useGetProjectCasesStats } from "@features/dashboard/api/useGetProjectCasesStats";
 import { useGetProjectChangeRequestsStats } from "@features/dashboard/api/useGetProjectChangeRequestsStats";
-import { getProjectPermissions } from "@/utils/permission";
+import { getProjectPermissions } from "@utils/permission";
 import { SortOrder } from "@/types/common";
 import ErrorIndicator from "@components/error-indicator/ErrorIndicator";
 import {

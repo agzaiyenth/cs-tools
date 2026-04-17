@@ -20,8 +20,8 @@ import {
   type InfiniteData,
 } from "@tanstack/react-query";
 import { useAsgardeo } from "@asgardeo/react";
-import { useAuthApiClient } from "@/utils/useAuthApiClient";
-import { ApiError } from "@/utils/ApiError";
+import { useAuthApiClient } from "@utils/useAuthApiClient";
+import { ApiError } from "@utils/ApiError";
 import { useLogger } from "@hooks/useLogger";
 import { ApiQueryKeys } from "@constants/apiConstants";
 import type {

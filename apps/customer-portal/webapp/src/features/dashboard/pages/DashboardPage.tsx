@@ -23,7 +23,7 @@ import { useLoader } from "@context/linear-loader/LoaderContext";
 import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
 import useInfiniteProjects, { flattenProjectPages } from "@api/useGetProjects";
 import useGetProjectDetails from "@api/useGetProjectDetails";
-import { isForbiddenError, getForbiddenMessage } from "@/utils/ApiError";
+import { isForbiddenError, getForbiddenMessage } from "@utils/ApiError";
 import Error403Page from "@components/error/Error403Page";
 import { useGetProjectCasesStats } from "@features/dashboard/api/useGetProjectCasesStats";
 import { useGetProjectChangeRequestsStats } from "@features/dashboard/api/useGetProjectChangeRequestsStats";
@@ -39,7 +39,7 @@ import {
   getProjectPermissions,
   shouldExcludeS0,
   shouldForceSeverityS4,
-} from "@/utils/permission";
+} from "@utils/permission";
 import { StatCard } from "@features/dashboard/components/stats/StatCard";
 import ChartLayout from "@features/dashboard/components/charts/ChartLayout";
 import CasesTable from "@features/dashboard/components/cases-table/CasesTable";

@@ -31,7 +31,7 @@ import { Sparkles } from "@wso2/oxygen-ui-icons-react";
 import { type JSX, type UIEvent } from "react";
 import { SelectMenuLoadMoreRow } from "@components/select-menu-load-more-row/SelectMenuLoadMoreRow";
 import { EMPTY_DROPDOWN_PLACEHOLDER } from "@constants/common";
-import { paginatedSelectMenuListProps } from "@/utils/common";
+import { paginatedSelectMenuListProps } from "@utils/common";
 
 /**
  * Renders the Basic Information section used during case creation.

@@ -34,7 +34,7 @@ import {
   SUPPORT_OVERVIEW_CHAT_LIMIT,
   CaseType,
 } from "@features/support/constants/supportConstants";
-import { getProjectPermissions } from "@/utils/permission";
+import { getProjectPermissions } from "@utils/permission";
 import { isClosedLikeCaseStatus, isS0Case } from "@features/support/utils/support";
 import { SortOrder } from "@/types/common";
 import type { ChatHistoryItem } from "@features/support/types/conversations";

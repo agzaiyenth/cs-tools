@@ -48,7 +48,7 @@ import {
   getProjectPermissions,
   shouldExcludeS0,
   shouldForceSeverityS4,
-} from "@/utils/permission";
+} from "@utils/permission";
 import type { AllCasesFilterValues } from "@features/support/types/cases";
 import ListStatGrid from "@components/list-view/ListStatGrid";
 import ListPageHeader from "@components/list-view/ListPageHeader";

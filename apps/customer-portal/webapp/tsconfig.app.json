@@ -47,6 +47,7 @@
       "@layouts/*": ["src/layouts/*"],
       "@features/*": ["src/features/*"],
       "@providers/*": ["src/providers/*"],
+      "@utils/*": ["src/utils/*"],
       "@time-tracking": [
         "src/features/project-details/components/time-tracking"
       ],
