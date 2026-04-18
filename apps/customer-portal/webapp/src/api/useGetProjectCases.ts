@@ -105,6 +105,5 @@ export default function useGetProjectCases(
     enabled:
       (options?.enabled ?? true) && !!projectId && isSignedIn && !isAuthLoading,
     staleTime:  0,
-    refetchOnWindowFocus: false,
   });
 }
