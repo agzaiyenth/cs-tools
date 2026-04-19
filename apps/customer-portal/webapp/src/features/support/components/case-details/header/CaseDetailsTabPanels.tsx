@@ -39,7 +39,6 @@ export default function CaseDetailsTabPanels({
   focusMode = false,
   isEngagement = false,
   isServiceRequest = false,
-  onKnowledgeBaseCountChange,
 }: CaseDetailsTabPanelsProps): JSX.Element | null {
   switch (panelIndex) {
     case 0: {
@@ -113,7 +112,6 @@ export default function CaseDetailsTabPanels({
           caseId={caseId}
           projectId={resolvedProjectId}
           data={data}
-          onCountChange={onKnowledgeBaseCountChange}
         />
       );
     }

@@ -239,7 +239,7 @@ describe("CaseDetailsTabPanels", () => {
   it("should show Knowledge Base recommendations panel when activeTab is 4", () => {
     renderTabPanels(4);
     expect(
-      screen.getByText(/Knowledge base articles that may help/i),
+      screen.getByText(/No matching knowledge base articles were found for this case/i),
     ).toBeInTheDocument();
   });
 });

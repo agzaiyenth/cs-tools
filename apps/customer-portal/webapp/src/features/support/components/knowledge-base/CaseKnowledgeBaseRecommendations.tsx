@@ -28,7 +28,7 @@ import {
 } from "@wso2/oxygen-ui";
 import { BookOpen, ExternalLink } from "@wso2/oxygen-ui-icons-react";
 import EmptyIcon from "@components/empty-state/EmptyIcon";
-import { useEffect, useMemo, type JSX } from "react";
+import { useMemo, type JSX } from "react";
 import useGetCaseComments from "@features/support/api/useGetCaseComments";
 import { KB_ARTICLE_VIEW_BASE_URL } from "@features/support/constants/supportConstants";
 import { useConversationRecommendationsSearch } from "@features/support/api/useConversationRecommendationsSearch";
@@ -42,7 +42,6 @@ export type CaseKnowledgeBaseRecommendationsProps = {
   caseId: string;
   projectId: string;
   data: CaseDetails | undefined;
-  onCountChange?: (count: number) => void;
 };
 
 /**
@@ -55,7 +54,6 @@ export default function CaseKnowledgeBaseRecommendations({
   caseId,
   projectId,
   data,
-  onCountChange,
 }: CaseKnowledgeBaseRecommendationsProps): JSX.Element {
   const theme = useTheme();
   const accent = theme.palette.primary.main;
@@ -65,7 +63,7 @@ export default function CaseKnowledgeBaseRecommendations({
       offset: 0,
     });
 
-  const comments = commentsData?.comments ?? [];
+  const comments = useMemo(() => commentsData?.comments ?? [], [commentsData?.comments]);
 
   const payload = useMemo(
     () => buildRecommendationRequestFromCase(data, comments),
@@ -88,12 +86,6 @@ export default function CaseKnowledgeBaseRecommendations({
 
   const items = recData?.recommendations ?? [];
   const isLoading = isCommentsLoading || (payload != null && isRecLoading);
-
-  useEffect(() => {
-    if (!isLoading && !isError && recData) {
-      onCountChange?.(items.length);
-    }
-  }, [isLoading, isError, recData, items.length, onCountChange]);
 
   const skeletonCard = (k: number) => (
     <Paper key={k} variant="outlined" sx={{ p: 2, display: "flex", alignItems: "center", gap: 2 }}>
