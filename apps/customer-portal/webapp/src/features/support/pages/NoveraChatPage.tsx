@@ -577,6 +577,7 @@ export default function NoveraChatPage(): JSX.Element {
     ],
   );
 
+  const handleSolutionWorked = useCallback(() => {
   const handleSendMessage = useCallback(async (): Promise<boolean> => {
     const text = htmlToPlainText(inputValueRef.current).trim();
     if (!text || isSending || !projectId) return false;
