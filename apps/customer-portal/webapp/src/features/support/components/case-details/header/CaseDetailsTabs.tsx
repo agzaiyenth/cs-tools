@@ -35,6 +35,7 @@ export default function CaseDetailsTabs({
   callCount,
   hideCallsTab = false,
   hideKnowledgeBaseTab = false,
+  knowledgeBaseCount,
 }: CaseDetailsTabsProps): JSX.Element {
   const tabs = CASE_DETAILS_TABS.filter((t) => {
     if (hideCallsTab && t.label.startsWith("Calls")) {
@@ -77,12 +78,15 @@ export default function CaseDetailsTabs({
         {tabs.map(({ label, Icon }) => {
           const isAttachmentsTab = label.startsWith("Attachments");
           const isCallsTab = label.startsWith("Calls");
+          const isKnowledgeBaseTab = label.startsWith("Knowledge Base");
 
           let tabLabel = label;
           if (isAttachmentsTab && attachmentCount !== undefined) {
             tabLabel = `Attachments (${attachmentCount})`;
           } else if (isCallsTab && callCount !== undefined) {
             tabLabel = `Calls (${callCount})`;
+          } else if (isKnowledgeBaseTab && knowledgeBaseCount !== undefined) {
+            tabLabel = `Knowledge Base (${knowledgeBaseCount})`;
           }
 
           return (
