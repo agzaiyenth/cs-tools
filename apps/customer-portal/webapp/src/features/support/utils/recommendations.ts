@@ -102,7 +102,7 @@ export function buildRecommendationRequestFromCase(
   const chatHistory: RecommendationApiMessage[] = [];
   const title = data.title?.trim() ?? "";
   const description = data.description?.trim() ?? "";
-  const createdOn = data.createdOn ?? new Date().toISOString();
+  const createdOn = data.createdOn ?? "";
 
   if (title.length > 0) {
     chatHistory.push({
@@ -175,7 +175,7 @@ export function buildRecommendationRequestFromConversationMessages(
     chatHistory.push({
       role: isBot ? "assistant" : "user",
       content,
-      timestamp: m.createdOn ?? new Date().toISOString(),
+      timestamp: m.createdOn ?? "",
     });
   }
 
