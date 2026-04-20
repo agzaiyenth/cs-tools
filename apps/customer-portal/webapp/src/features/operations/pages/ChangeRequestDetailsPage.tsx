@@ -56,9 +56,7 @@ import ChangeRequestDetailsLoadingSkeleton from "@features/operations/components
 import {
   buildChangeRequestWorkflowStages,
   generateChangeRequestDetailsPdf,
-  getChangeRequestDecisionMode,
 } from "@features/operations/utils/changeRequests";
-import { ChangeRequestDecisionMode } from "@features/operations/types/changeRequests";
 import { formatDateTime } from "@features/support/utils/support";
 import {
   formatImpactLabel,
@@ -98,22 +96,26 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
     () => buildChangeRequestWorkflowStages(changeRequest),
     [changeRequest],
   );
-  const decisionMode = getChangeRequestDecisionMode(changeRequest);
-  const canShowApprovalActions =
-    decisionMode !== ChangeRequestDecisionMode.NONE;
-  const canShowProposeNewTime =
-    decisionMode === ChangeRequestDecisionMode.CUSTOMER_APPROVAL;
+  const hasCustomerApproved = changeRequest?.hasCustomerApproved === true;
+  const hasCustomerReviewed = changeRequest?.hasCustomerReviewed === true;
+  const canShowProposeNewTime = hasCustomerApproved;
+  const canShowApprovalActions = hasCustomerApproved || hasCustomerReviewed;
 
   const impactColor = getChangeRequestImpactColorShades(
     changeRequest?.impact?.label,
   );
   const handleApproveChange = () => {
-    if (!changeRequest || decisionMode === ChangeRequestDecisionMode.NONE)
-      return;
+    if (!changeRequest) return;
+
+    const payload = !hasCustomerApproved
+      ? { isCustomerApproved: true }
+      : !hasCustomerReviewed
+        ? { isCustomerReviewed: true }
+        : null;
+    if (!payload) return;
+
     patchChangeRequest.mutate(
-      decisionMode === ChangeRequestDecisionMode.CUSTOMER_APPROVAL
-        ? { isCustomerApproved: true }
-        : { isCustomerReviewed: true },
+      payload,
       {
         onSuccess: () => {
           showSuccess("Change request approved successfully.");
@@ -126,12 +128,17 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
   };
 
   const handleRejectChange = () => {
-    if (!changeRequest || decisionMode === ChangeRequestDecisionMode.NONE)
-      return;
+    if (!changeRequest) return;
+
+    const payload = !hasCustomerApproved
+      ? { isCustomerApproved: false }
+      : !hasCustomerReviewed
+        ? { isCustomerReviewed: false }
+        : null;
+    if (!payload) return;
+
     patchChangeRequest.mutate(
-      decisionMode === ChangeRequestDecisionMode.CUSTOMER_APPROVAL
-        ? { isCustomerApproved: false }
-        : { isCustomerReviewed: false },
+      payload,
       {
         onSuccess: () => {
           showSuccess("Change request rejected successfully.");
