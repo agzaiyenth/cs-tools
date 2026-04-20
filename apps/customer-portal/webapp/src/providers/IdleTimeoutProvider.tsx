@@ -24,6 +24,7 @@ import {
   IDLE_PROMPT_BEFORE_MS,
   IDLE_THROTTLE_MS,
   CONTINUE_LOADER_MS,
+  CONTINUE_LOADER_IDLE_THRESHOLD_MS,
 } from "@constants/authConstants";
 
 interface IdleTimeoutProviderProps {
@@ -53,7 +54,7 @@ export default function IdleTimeoutProvider({
     }
   };
 
-  const { activate } = useIdleTimer({
+  const { activate, getIdleTime } = useIdleTimer({
     onPrompt,
     timeout: IDLE_TIMEOUT_MS,
     promptBeforeIdle: IDLE_PROMPT_BEFORE_MS,
@@ -65,6 +66,13 @@ export default function IdleTimeoutProvider({
       clearTimeout(continueTimerRef.current);
       continueTimerRef.current = null;
     }
+
+    if (getIdleTime() < CONTINUE_LOADER_IDLE_THRESHOLD_MS) {
+      setSessionWarningOpen(false);
+      activate();
+      return;
+    }
+
     setIsContinuing(true);
     continueTimerRef.current = setTimeout(() => {
       setIsContinuing(false);
