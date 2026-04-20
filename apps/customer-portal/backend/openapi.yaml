@@ -5226,6 +5226,16 @@ components:
           type: string
           description: Abbreviation
           nullable: true
+        releasedOn:
+          description: Release date (for product versions)
+          nullable: true
+          allOf:
+          - $ref: '#/components/schemas/Date'
+        endOfLifeOn:
+          description: End of life date (for product versions)
+          nullable: true
+          allOf:
+          - $ref: '#/components/schemas/Date'
       additionalProperties: false
       description: Reference item.
     ReferenceTableItem:
@@ -5252,6 +5262,16 @@ components:
           type: string
           description: Abbreviation
           nullable: true
+        releasedOn:
+          description: Release date (for product versions)
+          nullable: true
+          allOf:
+          - $ref: '#/components/schemas/Date'
+        endOfLifeOn:
+          description: End of life date (for product versions)
+          nullable: true
+          allOf:
+          - $ref: '#/components/schemas/Date'
       description: Basic table information.
     RegistryTokenCreatePayload:
       required:

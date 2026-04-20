@@ -286,8 +286,6 @@ public isolated function mapDeployedProducts(entity:DeployedProductsResponse res
             description: product.description,
             cores: product.cores,
             tps: product.tps,
-            releasedOn: product.releasedOn,
-            endOfLifeOn: product.endOfLifeOn,
             updates: product.updates,
             product: associatedProduct != () ? {
                     id: associatedProduct.id,
@@ -295,7 +293,12 @@ public isolated function mapDeployedProducts(entity:DeployedProductsResponse res
                     abbreviation: associatedProduct?.abbreviation
                 } : (),
             deployment: deployment != () ? {id: deployment.id, label: deployment.name} : (),
-            version: version != () ? {id: version.id, label: version.name} : (),
+            version: version != () ? {
+                    id: version.id,
+                    label: version.name,
+                    releasedOn: associatedProduct?.releasedOn,
+                    endOfLifeOn: associatedProduct?.endOfLifeOn
+                } : (),
             category: category != () ? {id: category.id, label: category.name} : ()
         };
 
