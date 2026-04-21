@@ -114,7 +114,7 @@ export const SEVERITY_LABEL_TO_DISPLAY: Record<string, string> = {
   "1 - Critical": "S1",
   "2 - High": "S2",
   "3 - Moderate": "S3",
-  "4 - Low": "S4",
+  "4 - Low": "S4(Query)",
 };
 
 // S0 (Catastrophic) severity API labels - used when filtering out S0 for non-Managed Cloud Subscription projects.

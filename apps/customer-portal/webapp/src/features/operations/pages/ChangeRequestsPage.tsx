@@ -80,11 +80,11 @@ export default function ChangeRequestsPage(): JSX.Element {
   const [viewMode, setViewMode] = useState<ChangeRequestsViewMode>(
     ChangeRequestsViewMode.List,
   );
-  const sessionPrefix = `${projectId ?? ""}-change-requests`;
+  const sessionPrefix = `${projectId ?? "unknown"}-change-requests`;
   const [searchTerm, setSearchTerm] = useSessionState(`${sessionPrefix}-search`, "");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [filters, setFilters] = useSessionState<ChangeRequestFilterValues>(`${sessionPrefix}-filters`, {});
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useSessionState<number>(`${sessionPrefix}-page`, 1);
   const [isExporting, setIsExporting] = useState(false);
   const pageSize = OPERATIONS_LIST_PAGE_SIZE;
 
