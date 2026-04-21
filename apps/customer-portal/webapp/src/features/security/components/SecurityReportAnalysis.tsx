@@ -24,6 +24,7 @@ import {
   type ChangeEvent,
 } from "react";
 import { useNavigate, useParams } from "react-router";
+import { useSessionState } from "@hooks/useSessionState";
 import { CaseType } from "@features/support/constants/supportConstants";
 import useGetProjectCases from "@api/useGetProjectCases";
 import useGetProjectFilters from "@api/useGetProjectFilters";
@@ -82,13 +83,12 @@ const SecurityReportAnalysis = (): JSX.Element => {
   const [viewMode, setViewMode] = useState<SecurityReportViewMode>(
     SecurityReportViewMode.ALL,
   );
-  const [searchTerm, setSearchTerm] = useState("");
+  const sessionPrefix = `${projectId ?? ""}-security-reports`;
+  const [searchTerm, setSearchTerm] = useSessionState(`${sessionPrefix}-search`, "");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const [filters, setFilters] = useState<AllCasesFilterValues>({});
-  const [sortField, setSortField] = useState<SecurityReportCaseSortField>(
-    SecurityReportCaseSortField.createdOn,
-  );
-  const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.DESC);
+  const [filters, setFilters] = useSessionState<AllCasesFilterValues>(`${sessionPrefix}-filters`, {});
+  const [sortField, setSortField] = useSessionState<SecurityReportCaseSortField>(`${sessionPrefix}-sortField`, SecurityReportCaseSortField.createdOn);
+  const [sortOrder, setSortOrder] = useSessionState<SortOrder>(`${sessionPrefix}-sortOrder`, SortOrder.DESC);
   const [page, setPage] = useState(1);
   const pageSize = SECURITY_REPORT_ANALYSIS_PAGE_SIZE;
 
