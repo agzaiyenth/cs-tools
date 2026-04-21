@@ -32,6 +32,9 @@ import TopBanner from "@components/top-banner/TopBanner";
 import Footer from "@components/footer/Footer";
 import Header from "@components/header/Header";
 import SideBar from "@components/side-nav-bar/SideBar";
+import useGetUserDetails from "@features/settings/api/useGetUserDetails";
+import PortalAccessRequiredPage from "@components/error/PortalAccessRequiredPage";
+import { isUnauthorizedError } from "@utils/ApiError";
 import {
   getSidebarCollapsed,
   setSidebarCollapsed,
@@ -53,6 +56,7 @@ export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
   const location = useLocation();
   const mainContentRef = useRef<HTMLDivElement>(null);
   const { isLoading: isAuthLoading } = useAsgardeo();
+  const { error: userDetailsError } = useGetUserDetails();
 
   // Scroll to top on route change
   useEffect(() => {
@@ -142,6 +146,7 @@ export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
     isVulnerabilityDetailsPage ||
     isPendingUpdatesPage ||
     isUpdateLevelDetailsPage;
+  const hasPortalAccessError = isUnauthorizedError(userDetailsError);
 
   return (
     <IdleTimeoutProvider>
@@ -237,6 +242,8 @@ export default function AppLayout({ children }: AppLayoutProps): JSX.Element {
                       {loadingMessage}
                     </Typography>
                   </Box>
+                ) : hasPortalAccessError ? (
+                  <PortalAccessRequiredPage />
                 ) : (
                   children || (
                     <Outlet
