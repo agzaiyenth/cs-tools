@@ -59,7 +59,6 @@ import { ConversationListRowAction } from "@features/support/types/conversations
 import { resolveConversationListRowAction } from "@features/support/utils/conversationsList";
 import { NOVERA_DISPLAY_NAME } from "@features/support/constants/chatConstants";
 import MarkdownIt from "markdown-it";
-import styles from "./conversations.module.css";
 
 const md = new MarkdownIt({ linkify: true, breaks: true });
 
@@ -131,7 +130,7 @@ function ConversationMsgBubble({
         spacing={0.75}
         sx={{
           width: "100%",
-          maxWidth: 800,
+          maxWidth: isBot ? "100%" : 800,
           minWidth: 0,
           alignItems: isRight ? "flex-end" : "flex-start",
         }}
