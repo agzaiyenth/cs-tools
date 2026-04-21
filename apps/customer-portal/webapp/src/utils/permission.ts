@@ -237,11 +237,7 @@ export function shouldRestrictToPrimaryProductionDeployments(
 export function isCloudSupportProject(
   projectTypeLabel: string | null | undefined,
 ): boolean {
-  return (
-    projectTypeLabel === ProjectType.CLOUD_SUPPORT ||
-    projectTypeLabel === ProjectType.CLOUD_SUBSCRIPTION ||
-    projectTypeLabel === ProjectType.CLOUD_EVALUATION_SUPPORT
-  );
+  return projectTypeLabel === ProjectType.CLOUD_SUPPORT;
 }
 
 /**
