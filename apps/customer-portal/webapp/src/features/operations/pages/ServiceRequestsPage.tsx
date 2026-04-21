@@ -93,13 +93,14 @@ export default function ServiceRequestsPage(): JSX.Element {
   const navSegment = getOperationsNavSegment(location.pathname);
   const returnTo = (location.state as { returnTo?: string } | null)?.returnTo;
 
-  const sessionPrefix = `${projectId ?? ""}-service-requests`;
+  const listMode = createdByMe ? "mine" : "all";
+  const sessionPrefix = `${projectId ?? "unknown"}-service-requests-${listMode}`;
   const [searchTerm, setSearchTerm] = useSessionState(`${sessionPrefix}-search`, "");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [filters, setFilters] = useSessionState<AllCasesFilterValues>(`${sessionPrefix}-filters`, {});
   const [sortField, setSortField] = useSessionState<ServiceRequestCaseSortField>(`${sessionPrefix}-sortField`, ServiceRequestCaseSortField.CreatedOn);
   const [sortOrder, setSortOrder] = useSessionState<SortOrder>(`${sessionPrefix}-sortOrder`, SortOrder.DESC);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useSessionState<number>(`${sessionPrefix}-page`, 1);
   const pageSize = OPERATIONS_LIST_PAGE_SIZE;
 
   const { data: project, isLoading: isProjectLoading } = useGetProjectDetails(

@@ -83,13 +83,20 @@ const SecurityReportAnalysis = (): JSX.Element => {
   const [viewMode, setViewMode] = useState<SecurityReportViewMode>(
     SecurityReportViewMode.ALL,
   );
-  const sessionPrefix = `${projectId ?? ""}-security-reports`;
+  const sessionPrefix = `${projectId ?? "unknown"}-security-reports`;
+  const validSecuritySortFields = SECURITY_REPORT_SORT_OPTIONS.map((o) => o.value as string);
+  const isValidSecuritySortField = (v: unknown): v is SecurityReportCaseSortField =>
+    typeof v === "string" && validSecuritySortFields.includes(v);
   const [searchTerm, setSearchTerm] = useSessionState(`${sessionPrefix}-search`, "");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [filters, setFilters] = useSessionState<AllCasesFilterValues>(`${sessionPrefix}-filters`, {});
-  const [sortField, setSortField] = useSessionState<SecurityReportCaseSortField>(`${sessionPrefix}-sortField`, SecurityReportCaseSortField.createdOn);
+  const [sortField, setSortField] = useSessionState<SecurityReportCaseSortField>(
+    `${sessionPrefix}-sortField`,
+    SecurityReportCaseSortField.createdOn,
+    isValidSecuritySortField,
+  );
   const [sortOrder, setSortOrder] = useSessionState<SortOrder>(`${sessionPrefix}-sortOrder`, SortOrder.DESC);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useSessionState<number>(`${sessionPrefix}-page`, 1);
   const pageSize = SECURITY_REPORT_ANALYSIS_PAGE_SIZE;
 
   const { data: filterMetadata } = useGetProjectFilters(projectId || "");

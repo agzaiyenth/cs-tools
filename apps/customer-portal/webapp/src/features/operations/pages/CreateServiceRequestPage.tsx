@@ -629,22 +629,22 @@ export default function CreateServiceRequestPage(): JSX.Element {
 
         {!!selectedCatalogId && !!selectedCatalogItemId && (
           <div ref={requestDetailsSectionRef}>
-          <VariableFormFields
-            variables={variablesData?.variables}
-            isLoading={isVariablesLoading}
-            values={variableValues}
-            onChange={handleVariableChange}
-            selectedRequestTypeLabel={selectedCatalogItemLabel}
-            contextValues={{
-              projectDisplay: projectDisplay,
-              deploymentDisplay: deployment,
-              productDisplay:
-                sortedProductOptions.find((p) => p.id === product)?.label ?? "",
-            }}
-            attachments={attachments}
-            onAttachmentClick={handleAttachmentClick}
-            onAttachmentRemove={handleAttachmentRemove}
-          />
+            <VariableFormFields
+              variables={variablesData?.variables}
+              isLoading={isVariablesLoading}
+              values={variableValues}
+              onChange={handleVariableChange}
+              selectedRequestTypeLabel={selectedCatalogItemLabel}
+              contextValues={{
+                projectDisplay: projectDisplay,
+                deploymentDisplay: deployment,
+                productDisplay:
+                  sortedProductOptions.find((p) => p.id === product)?.label ?? "",
+              }}
+              attachments={attachments}
+              onAttachmentClick={handleAttachmentClick}
+              onAttachmentRemove={handleAttachmentRemove}
+            />
           </div>
         )}
 
