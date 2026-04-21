@@ -23,6 +23,7 @@ configurable int stateIdOpen = 1;
 configurable types:FeatureFlags featureFlags = {
     usageMetricsEnabled: true
 };
+configurable string[] restrictedChangeRequestStateIds = ["-3", "-4", "-5"];
 
 # Search cases for a given project.
 #
@@ -158,13 +159,18 @@ public isolated function getProjectFilters(entity:ProjectMetadataResponse projec
     types:ReferenceItem[] engagementPaymentTypes = from entity:ChoiceListItem item in projectMetadata.engagementPaymentTypes
         select {id: item.id.toString(), label: item.label};
 
+    types:ReferenceItem[] nonRestrictedChangeRequestStates =
+        from types:ReferenceItem changeRequestState in changeRequestStates
+    where restrictedChangeRequestStateIds.indexOf(changeRequestState.id) is ()
+    select changeRequestState;
+
     return {
         caseStates,
         severities,
         issueTypes,
         deploymentTypes,
         callRequestStates,
-        changeRequestStates,
+        changeRequestStates: nonRestrictedChangeRequestStates,
         changeRequestImpacts,
         caseTypes,
         conversationStates,
