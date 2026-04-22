@@ -16,27 +16,26 @@
 
 import { type JSX } from "react";
 import ErrorPage from "./ErrorPage";
-import illustration from "@assets/error/error-500.svg";
+import illustration from "@assets/error/error-404.svg";
 
-interface Error500PageProps {
+interface Error400PageProps {
   message?: string;
 }
 
 /**
- * Full-area state for server errors (5xx) and unknown failures, matching
- * the layout scale of {@link Error404Page} and {@link Error400Page}.
+ * Full-area state for HTTP 400 Bad Request responses from the API.
  *
- * @param {Error500PageProps} props - Optional message from the server or fallback copy.
- * @returns {JSX.Element} Server error illustration and copy.
+ * @param {Error400PageProps} props - Optional message from the server.
+ * @returns {JSX.Element} Bad request illustration and copy.
  */
-export default function Error500Page({ message }: Error500PageProps): JSX.Element {
+export default function Error400Page({ message }: Error400PageProps): JSX.Element {
   return (
     <ErrorPage
       illustration={illustration}
-      illustrationAlt="500 server error illustration"
+      illustrationAlt="400 bad request illustration"
       description={
-        message?.trim() ||
-        "Something went wrong on our side. Please try again in a few moments."
+        message ??
+        "This request could not be processed. Check the link or try again from the portal navigation."
       }
     />
   );

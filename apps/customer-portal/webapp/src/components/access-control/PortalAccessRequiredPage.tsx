@@ -16,7 +16,7 @@
 
 import { type JSX } from "react";
 import { Box, Link, Stack, Typography } from "@wso2/oxygen-ui";
-import illustration from "@assets/error/portal-access-required.svg";
+import illustration from "@assets/access-control/portal-access-required.svg";
 
 export default function PortalAccessRequiredPage(): JSX.Element {
   return (

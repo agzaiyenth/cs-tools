@@ -40,7 +40,7 @@ export default function ServiceRequestDetailsPage(): JSX.Element {
   const { showLoader, hideLoader } = useLoader();
   const { showError } = useErrorBanner();
 
-  const { data, isLoading, isError } = useGetCaseDetails(
+  const { data, isLoading, isError, error } = useGetCaseDetails(
     projectId || "",
     serviceRequestId || "",
   );
@@ -106,6 +106,7 @@ export default function ServiceRequestDetailsPage(): JSX.Element {
       data={data}
       isLoading={showSkeletons}
       isError={isError}
+      error={error}
       caseId={serviceRequestId || ""}
       projectId={projectId}
       onBack={handleBack}
