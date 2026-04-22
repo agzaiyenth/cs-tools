@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { type JSX } from "react";
+import { type JSX, useEffect } from "react";
 import { Box } from "@wso2/oxygen-ui";
 import { Outlet, useParams } from "react-router";
 import useGetProjectDetails from "@api/useGetProjectDetails";
@@ -41,11 +41,36 @@ function ProjectGuardContent(): JSX.Element {
   const { setIsErrorPageDisplayed, setIsProjectSuspended } = useErrorPageContext();
 
   const { data, error, isLoading } = useGetProjectDetails(projectId ?? "");
-  const { data: projectsData, isLoading: isProjectsLoading } =
-    useInfiniteProjects({ pageSize: PROJECT_HUB_PROJECTS_PAGE_SIZE });
+  const {
+    data: projectsData,
+    isLoading: isProjectsLoading,
+    isFetching: isProjectsFetching,
+    hasNextPage,
+  } = useInfiniteProjects({ pageSize: PROJECT_HUB_PROJECTS_PAGE_SIZE });
 
-  if (!isLoading && error) {
-    setIsErrorPageDisplayed(true);
+  const hasError = !isLoading && Boolean(error);
+  const isProjectSuspended =
+    !isLoading && data?.closureState === ProjectClosureState.SUSPENDED;
+
+  const allProjects = flattenProjectPages(projectsData);
+  const allPagesLoaded =
+    !isProjectsLoading && !isProjectsFetching && hasNextPage === false;
+  const allProjectsSuspended =
+    allPagesLoaded &&
+    allProjects.length > 0 &&
+    allProjects.every((p) => p.closureState === ProjectClosureState.SUSPENDED);
+
+  const isErrorPageDisplayed = hasError || isProjectSuspended;
+
+  useEffect(() => {
+    setIsErrorPageDisplayed(isErrorPageDisplayed);
+  }, [isErrorPageDisplayed, setIsErrorPageDisplayed]);
+
+  useEffect(() => {
+    setIsProjectSuspended(isProjectSuspended);
+  }, [isProjectSuspended, setIsProjectSuspended]);
+
+  if (hasError) {
     return (
       <Box sx={{ py: 4, px: 2 }}>
         <ApiErrorState
@@ -56,22 +81,16 @@ function ProjectGuardContent(): JSX.Element {
     );
   }
 
-  if (!isLoading && data?.closureState === ProjectClosureState.SUSPENDED) {
-    setIsErrorPageDisplayed(true);
-    setIsProjectSuspended(true);
-    const allProjects = flattenProjectPages(projectsData);
-    const allProjectsSuspended =
-      !isProjectsLoading &&
-      allProjects.length > 0 &&
-      allProjects.every((p) => p.closureState === ProjectClosureState.SUSPENDED);
+  if (isProjectSuspended) {
+    if (!allPagesLoaded) {
+      return <></>;
+    }
     if (allProjectsSuspended) {
       return <AccountSuspendedPage />;
     }
-    return <ProjectSuspendedNoticePage project={data} />;
+    return <ProjectSuspendedNoticePage project={data!} />;
   }
 
-  setIsErrorPageDisplayed(false);
-  setIsProjectSuspended(false);
   return <Outlet />;
 }
 

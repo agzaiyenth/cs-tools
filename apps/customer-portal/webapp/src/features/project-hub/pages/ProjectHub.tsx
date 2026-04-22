@@ -121,7 +121,9 @@ export default function ProjectHub(): JSX.Element {
     !isAuthLoading &&
     !isError &&
     projects.length > 0 &&
-    !searchQuery &&
+    debouncedSearchQuery === "" &&
+    hasNextPage === false &&
+    !isFetchingNextPage &&
     projects.every((p) => p.closureState === ProjectClosureState.SUSPENDED);
 
   const isRedirectingToSingleProject =
