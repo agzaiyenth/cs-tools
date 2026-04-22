@@ -18,7 +18,7 @@ import { Box, Chip, Form, Typography, alpha, colors } from "@wso2/oxygen-ui";
 import { Calendar, Server, TriangleAlert } from "@wso2/oxygen-ui-icons-react";
 import type { JSX } from "react";
 import ChangeRequestsListSkeleton from "@features/operations/components/change-requests/ChangeRequestsListSkeleton";
-import Error500Page from "@components/error/Error500Page";
+import error500Svg from "@assets/error/error-500.svg";
 import EmptyIcon from "@components/empty-state/EmptyIcon";
 import SearchNoResultsIcon from "@components/empty-state/SearchNoResultsIcon";
 import { formatDateTime } from "@features/support/utils/support";
@@ -62,7 +62,10 @@ export default function ChangeRequestsList({
   if (isError) {
     return (
       <Box sx={{ textAlign: "center", py: OPERATIONS_LIST_EMPTY_CONTAINER_PY }}>
-        <Error500Page
+        <img
+          src={error500Svg}
+          alt=""
+          aria-hidden="true"
           style={{
             width: OPERATIONS_LIST_EMPTY_ILLUSTRATION_WIDTH_PX,
             height: "auto",

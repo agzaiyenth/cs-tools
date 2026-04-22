@@ -31,7 +31,7 @@ import { useState } from "react";
 import type { JSX } from "react";
 import type { ChangeRequestItem } from "@features/operations/types/changeRequests";
 import ChangeRequestsCalendarSkeleton from "@features/operations/components/change-requests/ChangeRequestsCalendarSkeleton";
-import Error500Page from "@components/error/Error500Page";
+import error500Svg from "@assets/error/error-500.svg";
 import { getChangeRequestStateColor } from "@features/operations/utils/changeRequestUi";
 import type { ChangeRequestsCalendarViewProps } from "@features/operations/types/changeRequests";
 import {
@@ -129,7 +129,7 @@ export default function ChangeRequestsCalendarView({
   if (isError) {
     return (
       <Box sx={{ textAlign: "center", py: 6 }}>
-        <Error500Page style={{ width: 200, height: "auto" }} />
+        <img src={error500Svg} alt="" aria-hidden="true" style={{ width: 200, height: "auto" }} />
         <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
           Failed to load calendar. Please try again.
         </Typography>

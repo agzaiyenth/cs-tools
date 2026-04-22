@@ -47,7 +47,7 @@ import {
 } from "@wso2/oxygen-ui-icons-react";
 import { useErrorBanner } from "@context/error-banner/ErrorBannerContext";
 import { useSuccessBanner } from "@context/success-banner/SuccessBannerContext";
-import Error500Page from "@components/error/Error500Page";
+import ApiErrorState from "@components/error/ApiErrorState";
 import useGetChangeRequestDetails from "@features/operations/api/useGetChangeRequestDetails";
 import { usePatchChangeRequest } from "@features/operations/api/usePatchChangeRequest";
 import ScheduledMaintenanceWindowCard from "@features/operations/components/change-requests/ScheduledMaintenanceWindowCard";
@@ -187,15 +187,10 @@ export default function ChangeRequestDetailsPage(): JSX.Element {
         >
           Back to Change Requests
         </Button>
-        <Paper variant="outlined" sx={{ p: 6, textAlign: "center" }}>
-          <Error500Page style={{ width: 200, height: "auto" }} />
-          <Typography variant="h6" color="text.primary" sx={{ mt: 3, mb: 1 }}>
-            Error Loading Change Request
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {error?.message || "Could not load change request details"}
-          </Typography>
-        </Paper>
+        <ApiErrorState
+          error={error}
+          fallbackMessage="Could not load change request details."
+        />
       </Stack>
     );
   }

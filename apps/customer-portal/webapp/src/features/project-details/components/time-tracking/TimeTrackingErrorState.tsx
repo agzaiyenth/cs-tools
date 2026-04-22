@@ -16,7 +16,7 @@
 
 import { Box, Stack, Typography } from "@wso2/oxygen-ui";
 import { type JSX } from "react";
-import Error500Page from "@components/error/Error500Page";
+import error500Svg from "@assets/error/error-500.svg";
 
 /**
  * Renders the error state for the time tracking panel.
@@ -39,7 +39,7 @@ export default function TimeTrackingErrorState(): JSX.Element {
         }}
         aria-hidden
       >
-        <Error500Page />
+        <img src={error500Svg} alt="" aria-hidden="true" style={{ width: "100%", height: "auto" }} />
       </Box>
       <Typography variant="body2" color="error">
         Error loading time tracking details. Please try again later.
