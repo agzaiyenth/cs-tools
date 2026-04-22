@@ -41,6 +41,10 @@ import {
   resolveEngagementsNumericTotal,
 } from "@features/dashboard/utils/dashboardCharts";
 
+function normalizeCategory(value: string): string {
+  return value.trim().toLowerCase().replace(/[\s_-]+/g, "-");
+}
+
 /**
  * Displays the cases trend chart.
  *
@@ -70,37 +74,31 @@ export const CasesTrendChart = ({
   );
   const darkModeColorByCategory = new Map<string, string>([
     [
-      "onboarding",
+      normalizeCategory("onboarding"),
       colors.blue?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
         colors.blue?.[300] ??
         "#93C5FD",
     ],
     [
-      "migration",
+      normalizeCategory("migration"),
       colors.orange?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
         colors.orange?.[300] ??
         "#FDBA74",
     ],
     [
-      "services",
+      normalizeCategory("services"),
       colors.green?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
         colors.green?.[300] ??
         "#86EFAC",
     ],
     [
-      "follow up",
+      normalizeCategory("follow-up"),
       colors.purple?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
         colors.purple?.[300] ??
         "#D8B4FE",
     ],
     [
-      "follow-up",
-      colors.purple?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
-        colors.purple?.[300] ??
-        "#D8B4FE",
-    ],
-    [
-      "improvements",
+      normalizeCategory("improvements"),
       colors.brown?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
         colors.brown?.[300] ??
         "#D6BFA8",
@@ -110,7 +108,7 @@ export const CasesTrendChart = ({
     ? chartData.map((entry) => ({
         ...entry,
         color:
-          darkModeColorByCategory.get(entry.name.toLowerCase()) ?? entry.color,
+          darkModeColorByCategory.get(normalizeCategory(entry.name)) ?? entry.color,
       }))
     : chartData;
   const darkModeCenterTextColor =

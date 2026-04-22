@@ -106,7 +106,12 @@ export default function ProjectMetadataSecondaryRow({
           )}
         </Box>
       </Grid>
-      {hideOnboardingStatus && <Grid size={{ xs: 12, md: 4 }} />}
+      {hideOnboardingStatus && (
+        <Grid
+          size={{ xs: 12, md: 4 }}
+          sx={{ display: { xs: "none", md: "block" } }}
+        />
+      )}
       {!hideOnboardingStatus && (
         <Grid size={{ xs: 12, md: 4 }}>
           <Box
@@ -123,8 +128,10 @@ export default function ProjectMetadataSecondaryRow({
             >
               Onboarding Status
             </Typography>
-            {isLoading || isError ? (
+            {isLoading ? (
               <Skeleton variant="rounded" width={80} height={24} />
+            ) : isError ? (
+              <ErrorIndicator entityName="onboarding status" />
             ) : onboardingStatus ? (
               <Tooltip title={onboardingStatus} arrow>
                 <Chip

@@ -191,6 +191,19 @@ describe("shouldHideOnboardingData", () => {
     expect(shouldHideOnboardingData("Not-Applicable")).toBe(true);
   });
 
+  it("returns true for null, undefined, and empty-string aliases", () => {
+    expect(shouldHideOnboardingData(undefined)).toBe(false);
+    expect(shouldHideOnboardingData(null)).toBe(false);
+    expect(shouldHideOnboardingData("")).toBe(false);
+  });
+
+  it("returns true for normalized Not Applicable variants", () => {
+    expect(shouldHideOnboardingData(" Not Applicable ")).toBe(true);
+    expect(shouldHideOnboardingData("NOT-APPLICABLE")).toBe(true);
+    expect(shouldHideOnboardingData("not_applicable")).toBe(true);
+    expect(shouldHideOnboardingData("N/A")).toBe(true);
+  });
+
   it("returns false for active onboarding values", () => {
     expect(shouldHideOnboardingData("In Progress")).toBe(false);
   });

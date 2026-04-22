@@ -111,6 +111,7 @@ export default function CaseDetailsTabs({
       {onFocusModeToggle && (
         <Button
           aria-label={focusMode ? "Exit focus mode" : "Focus mode"}
+          title={focusMode ? "Exit focus mode" : "Focus mode"}
           startIcon={
             focusMode ? <ChevronDown size={14} /> : <ChevronUp size={14} />
           }

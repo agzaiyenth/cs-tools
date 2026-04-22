@@ -129,7 +129,12 @@ describe("CaseDetailsDetailsPanel", () => {
   });
 
   it("should render Customer Information card with API data", () => {
-    renderDetailsPanel();
+    renderDetailsPanel({
+      data: {
+        ...mockCaseDetails,
+        csManager: "Jane Doe",
+      },
+    });
     expect(screen.getByText("Customer Information")).toBeInTheDocument();
     expect(screen.getByText("Organization")).toBeInTheDocument();
     expect(screen.getByText("Account")).toBeInTheDocument();
