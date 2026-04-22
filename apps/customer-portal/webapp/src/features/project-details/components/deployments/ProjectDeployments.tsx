@@ -16,6 +16,7 @@
 import { usePostProjectDeploymentsSearchInfinite } from "@api/usePostProjectDeploymentsSearch";
 import EmptyState from "@components/empty-state/EmptyState";
 import error500Svg from "@assets/error/error-500.svg";
+import { getApiErrorMessage } from "@utils/ApiError";
 import ErrorBanner from "@components/error-banner/ErrorBanner";
 import SuccessBanner from "@components/success-banner/SuccessBanner";
 import AddDeploymentModal from "@features/project-details/components/deployments/AddDeploymentModal";
@@ -231,6 +232,7 @@ export default function ProjectDeployments({
     }
 
     if (isError) {
+      const backendMessage = getApiErrorMessage(deploymentsQuery.error);
       return (
         <Box
           sx={{
@@ -242,6 +244,15 @@ export default function ProjectDeployments({
           }}
         >
           <img src={error500Svg} alt="" aria-hidden="true" style={{ width: 200, height: "auto" }} />
+          <Typography
+            role="alert"
+            aria-live="assertive"
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 2, textAlign: "center" }}
+          >
+            {backendMessage ?? "Failed to load deployments. Please try again."}
+          </Typography>
         </Box>
       );
     }

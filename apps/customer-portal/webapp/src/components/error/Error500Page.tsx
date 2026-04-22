@@ -35,7 +35,7 @@ export default function Error500Page({ message }: Error500PageProps): JSX.Elemen
       illustration={illustration}
       illustrationAlt="500 server error illustration"
       description={
-        message ??
+        message?.trim() ||
         "Something went wrong on our side. Please try again in a few moments."
       }
     />
