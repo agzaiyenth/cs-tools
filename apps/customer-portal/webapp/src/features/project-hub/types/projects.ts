@@ -78,6 +78,8 @@ export type ProjectDetails = {
   remainingOnboardingHours?: number;
   onboardingExpiryDate?: string | null;
   onboardingStatus?: string | null;
+  suspendedOn?: string | null;
+  suspensionReasons?: string[];
 };
 
 // Response type for project search responses.
