@@ -58,16 +58,18 @@ const SecurityPage = (): JSX.Element => {
   );
 
   const tabs = useMemo(
-    () =>
-      areFeaturePermissionsReady
-        ? SECURITY_PAGE_TABS.filter((tab) =>
+    () => {
+      const allTabs = [...SECURITY_PAGE_TABS];
+      return areFeaturePermissionsReady
+        ? allTabs.filter((tab) =>
             tab.id === SecurityTabId.VULNERABILITIES
               ? getProjectPermissions(projectDetails?.type?.label, {
                   projectFeatures,
                 }).hasSecurityReportAnalysis
               : true,
           )
-        : SECURITY_PAGE_TABS,
+        : allTabs;
+    },
     [areFeaturePermissionsReady, projectDetails?.type?.label, projectFeatures],
   );
   const activeTab = useMemo(() => {

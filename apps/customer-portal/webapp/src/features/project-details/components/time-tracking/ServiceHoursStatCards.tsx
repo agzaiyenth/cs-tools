@@ -26,6 +26,7 @@ import {
 } from "@features/project-details/utils/projectDetails";
 import { formatServiceHoursAllocationDisplay } from "@features/project-details/utils/serviceHoursFormat";
 import ErrorIndicator from "@components/error-indicator/ErrorIndicator";
+import { shouldHideOnboardingData } from "@utils/permission";
 
 function formatRemaining(value: number | undefined): string {
   return formatServiceHoursDecimalCompact(value);
@@ -59,6 +60,7 @@ export default function ServiceHoursStatCards({
     project?.onboardingExpiryDate?.trim() && project.onboardingExpiryDate
       ? formatProjectDate(project.onboardingExpiryDate)
       : PROJECT_DETAILS_SERVICE_HOURS_NOT_AVAILABLE;
+  const hideOnboardingCard = shouldHideOnboardingData(project?.onboardingStatus);
 
   return (
     <Box
@@ -117,7 +119,8 @@ export default function ServiceHoursStatCards({
       </Card>
 
       {/* Onboarding Hours Card */}
-      <Card sx={{ p: 2.5 }}>
+      {!hideOnboardingCard && (
+        <Card sx={{ p: 2.5 }}>
         <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
           <Box
             sx={{
@@ -174,7 +177,8 @@ export default function ServiceHoursStatCards({
             </>
           )}
         </CardContent>
-      </Card>
+        </Card>
+      )}
     </Box>
   );
 }
