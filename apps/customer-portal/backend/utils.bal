@@ -1082,3 +1082,29 @@ public isolated function mapUpdatedCaseResponse(entity:UpdatedCase updatedCase) 
         updatedBy: updatedCase.updatedBy
     };
 }
+
+# Map case activity search response to the desired structure.
+# 
+# + response - Case activity search response from the entity service
+# + return - Mapped case activity search response
+public isolated function mapCaseActivitySummaryResponse(entity:CaseActivitySearchResponse response)
+    returns types:CaseActivitySearchResponse {
+
+    types:Activity[] activities = from entity:Activity activity in response.activity
+        select {
+            id: activity.id,
+            'type: activity.'type,
+            createdOn: activity.createdOn,
+            createdBy: activity.createdBy,
+            content: activity.content,
+            createdByFirstName: activity.createdByFirstName,
+            createdByLastName: activity.createdByLastName,
+            createdByFullName: activity.createdByFullName,
+            fileName: activity.fileName,
+            contentType: activity.contentType,
+            sizeBytes: activity.sizeBytes,
+            downloadUrl: activity.downloadUrl,
+            commentType: activity.commentType
+        };
+    return {activities, totalRecords: response.totalRecords, 'limit: response.'limit, offset: response.offset};
+}
