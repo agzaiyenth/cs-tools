@@ -46,6 +46,25 @@ import { ROUTE_PREVIOUS_PAGE } from "@features/project-hub/constants/navigationC
 
 type FilterType = "all" | "security" | "regular";
 
+function IllustrativeMessage({ message }: { message: string }): JSX.Element {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        flexDirection: "column",
+        py: 5,
+      }}
+    >
+      <img src={error500Svg} alt="" aria-hidden="true" style={{ width: 200, height: "auto" }} />
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+        {message}
+      </Typography>
+    </Box>
+  );
+}
+
 const FILTER_BUTTONS: { key: FilterType; label: string }[] = [
   { key: "all", label: "All" },
   { key: "security", label: "Security" },
@@ -506,35 +525,9 @@ export default function UpdateLevelDetailsPage(): JSX.Element {
         {isLoading ? (
           <PendingUpdatesListSkeleton />
         ) : isError ? (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              flexDirection: "column",
-              py: 5,
-            }}
-          >
-            <img src={error500Svg} alt="" aria-hidden="true" style={{ width: 200, height: "auto" }} />
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-              Failed to load updates. Please try again.
-            </Typography>
-          </Box>
+          <IllustrativeMessage message="Failed to load updates. Please try again." />
         ) : !entry ? (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              flexDirection: "column",
-              py: 5,
-            }}
-          >
-            <img src={error500Svg} alt="" aria-hidden="true" style={{ width: 200, height: "auto" }} />
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-              Level not found.
-            </Typography>
-          </Box>
+          <IllustrativeMessage message="Level not found." />
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {/* Product info card */}
