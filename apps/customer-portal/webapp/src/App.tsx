@@ -65,7 +65,7 @@ export default function App(): JSX.Element {
               {/* Error Routes */}
               <Route path="/401" element={<ErrorLayout><Error401Page /></ErrorLayout>} />
               <Route path="/403" element={<ErrorLayout><Error403Page /></ErrorLayout>} />
-            <Route path="/404" element={<ErrorLayout><Error404Page /></ErrorLayout>} />
+              <Route path="/404" element={<ErrorLayout><Error404Page /></ErrorLayout>} />
 
             <Route element={<AuthGuard />}>
               {/* ProjectHub Page */}

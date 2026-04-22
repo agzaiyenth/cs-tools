@@ -74,7 +74,7 @@ export default function ApiErrorState({
   if (isNotFoundError(error)) {
     return (
       <Stack spacing={2} sx={mergedContainerSx}>
-        <Error404Page message={getApiErrorMessage(error)} />
+        <Error404Page message={getApiErrorMessage(error) ?? fallbackMessage} />
       </Stack>
     );
   }
@@ -82,7 +82,7 @@ export default function ApiErrorState({
   if (isBadRequestError(error)) {
     return (
       <Stack spacing={2} sx={mergedContainerSx}>
-        <Error400Page message={getApiErrorMessage(error)} />
+        <Error400Page message={getApiErrorMessage(error) ?? fallbackMessage} />
       </Stack>
     );
   }
