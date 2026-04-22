@@ -32,15 +32,12 @@ export default function TimeTrackingErrorState(): JSX.Element {
       sx={{ py: 8 }}
     >
       <Box
-        sx={{
-          width: 160,
-          maxWidth: "100%",
-          "& svg": { width: "100%", height: "auto" },
-        }}
+        component="img"
+        src={error500Svg}
+        alt=""
         aria-hidden
-      >
-        <img src={error500Svg} alt="" aria-hidden="true" style={{ width: "100%", height: "auto" }} />
-      </Box>
+        sx={{ width: 160, maxWidth: "100%", height: "auto" }}
+      />
       <Typography variant="body2" color="error">
         Error loading time tracking details. Please try again later.
       </Typography>
