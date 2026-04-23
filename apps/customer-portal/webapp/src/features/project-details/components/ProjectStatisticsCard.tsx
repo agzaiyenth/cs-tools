@@ -30,6 +30,32 @@ import type { JSX } from "react";
 import { statItems } from "@features/project-details/constants/projectDetailsConstants";
 import type { ProjectStatisticsCardProps } from "@features/project-details/types/projectDetailsComponents";
 
+const SKELETON_COUNT = 9;
+
+const StatCardSkeleton = ({ gridSize }: { gridSize: object }): JSX.Element => (
+  <Grid size={gridSize} sx={{ display: "flex" }}>
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        width: "100%",
+        p: 2,
+        border: 1,
+        borderColor: "divider",
+        borderRadius: 2,
+        gap: 2,
+      }}
+    >
+      <Box sx={{ flex: 1 }}>
+        <Skeleton variant="text" width="60%" height={16} sx={{ mb: 1 }} />
+        <Skeleton variant="rounded" width={48} height={28} />
+      </Box>
+      <Skeleton variant="circular" width={40} height={40} />
+    </Box>
+  </Grid>
+);
+
 const ProjectStatisticsCard = ({
   stats,
   isLoading,
@@ -37,7 +63,7 @@ const ProjectStatisticsCard = ({
   isSidebarOpen = false,
   showDeploymentsStat = true,
 }: ProjectStatisticsCardProps): JSX.Element => {
-  const gridSize = isSidebarOpen ? { xs: 12, xl: 4 } : { xs: 12, lg: 4 };
+  const gridSize = isSidebarOpen ? { xs: 12, xl: 4 } : { xs: 12, sm: 6, lg: 4 };
   const visibleStats = showDeploymentsStat
     ? statItems
     : statItems.filter((s) => s.key !== "deployments");
@@ -51,28 +77,25 @@ const ProjectStatisticsCard = ({
         </Box>
         <Divider sx={{ mb: 3, pb: 2 }} />
 
-        <Grid container spacing={2}>
-          {visibleStats.map((stat) => {
-            const StatIcon = stat.icon;
-            return (
-              <Grid size={gridSize} key={stat.label}>
-                <StatCard
-                  label={stat.label}
-                  value={
-                    isStatLoading
-                      ? (((
-                          <Skeleton variant="rounded" width={60} height={24} />
-                        ) as unknown) as string)
-                      : isError
-                        ? "Error"
-                        : (stats?.[stat.key] ?? "--").toString()
-                  }
-                  icon={<StatIcon size={24} />}
-                  iconColor={stat.iconColor}
-                />
-              </Grid>
-            );
-          })}
+        <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
+          {isStatLoading
+            ? Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+                <StatCardSkeleton key={i} gridSize={gridSize} />
+              ))
+            : visibleStats.map((stat) => {
+                const StatIcon = stat.icon;
+                return (
+                  <Grid size={gridSize} key={stat.label} sx={{ display: "flex" }}>
+                    <StatCard
+                      label={stat.label}
+                      value={isError ? "Error" : (stats?.[stat.key] ?? "--").toString()}
+                      icon={<StatIcon size={24} />}
+                      iconColor={stat.iconColor}
+                      sx={{ width: "100%" }}
+                    />
+                  </Grid>
+                );
+              })}
         </Grid>
       </CardContent>
     </Card>
