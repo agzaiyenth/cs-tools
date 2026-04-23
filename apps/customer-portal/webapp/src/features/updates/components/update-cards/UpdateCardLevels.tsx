@@ -25,7 +25,7 @@ import type { UpdateCardLevelsProps } from "@features/updates/types/updates";
  * @returns {JSX.Element} The rendered component.
  */
 export function UpdateCardLevels({
-  startingUpdateLevel,
+  currentUpdateLevel,
   recommendedUpdateLevel,
   pendingLevels,
 }: UpdateCardLevelsProps): JSX.Element {
@@ -36,8 +36,8 @@ export function UpdateCardLevels({
           <Typography variant="caption" color="text.secondary" display="block">
             Current Level
           </Typography>
-          <Typography variant="h6" color="info.main" fontWeight="bold">
-            U{startingUpdateLevel}
+          <Typography variant="h6" fontWeight="bold">
+            U{currentUpdateLevel}
           </Typography>
         </Box>
         <Box sx={{ textAlign: "center" }}>
@@ -52,7 +52,7 @@ export function UpdateCardLevels({
           <Typography variant="caption" color="text.secondary" display="block">
             Pending Levels
           </Typography>
-          <Typography variant="h6" color="warning.main" fontWeight="bold">
+          <Typography variant="h6" fontWeight="bold">
             {pendingLevels}
           </Typography>
         </Box>
