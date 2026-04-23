@@ -47,17 +47,20 @@ export const StatCard = ({
   isLoading,
   isError,
   isTrendError,
+  onClick,
 }: StatCardProps): JSX.Element => {
   const theme = useTheme();
 
   return (
     <Card
+      onClick={onClick}
       sx={{
         display: "flex",
         flexDirection: "column",
         gap: 3,
         p: 2.5,
         height: "100%",
+        ...(onClick && { cursor: "pointer" }),
       }}
     >
       {/* Icon and trend indicator */}
