@@ -28,6 +28,7 @@ import { formatValue, getInitials } from "@features/support/utils/support";
 export default function AssignedEngineerDisplay({
   assignedEngineer,
 }: AssignedEngineerDisplayProps): JSX.Element {
+  const theme = useTheme();
   const initials = getInitials(assignedEngineer);
 
   return (
