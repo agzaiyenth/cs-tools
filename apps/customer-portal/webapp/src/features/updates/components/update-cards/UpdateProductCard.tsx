@@ -14,20 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  LinearProgress,
-} from "@wso2/oxygen-ui";
-import { FileText } from "@wso2/oxygen-ui-icons-react";
+import { Card, CardContent } from "@wso2/oxygen-ui";
 import type { JSX } from "react";
 import type { UpdateProductCardProps } from "@features/updates/types/updates";
-import {
-  formatViewPendingUpdatesButtonLabel,
-  resolveUpdateCardHeaderStatusColor,
-} from "@features/updates/utils/updates";
+import { resolveUpdateCardHeaderStatusColor } from "@features/updates/utils/updates";
 import { UpdateCardHeader } from "@update-cards/UpdateCardHeader";
 import { UpdateCardLevels } from "@update-cards/UpdateCardLevels";
 import { UpdateCardBreakdown } from "@update-cards/UpdateCardBreakdown";
@@ -40,12 +30,13 @@ import { UpdateCardBreakdown } from "@update-cards/UpdateCardBreakdown";
  */
 export function UpdateProductCard({
   item,
-  onViewPendingUpdates,
+  onInstalledClick,
+  onPendingClick,
 }: UpdateProductCardProps): JSX.Element {
   const {
     productName,
     productBaseVersion,
-    startingUpdateLevel,
+    endingUpdateLevel,
     recommendedUpdateLevel,
     installedUpdatesCount,
     installedSecurityUpdatesCount,
@@ -53,10 +44,10 @@ export function UpdateProductCard({
     availableSecurityUpdatesCount,
   } = item;
 
-  const pendingLevels = recommendedUpdateLevel - startingUpdateLevel;
+  const pendingLevels = recommendedUpdateLevel - endingUpdateLevel;
   const percentage =
     recommendedUpdateLevel > 0
-      ? (startingUpdateLevel / recommendedUpdateLevel) * 100
+      ? (endingUpdateLevel / recommendedUpdateLevel) * 100
       : 0;
   const isHealthy = percentage >= 50;
   const statusColor = resolveUpdateCardHeaderStatusColor(isHealthy);
@@ -78,7 +69,7 @@ export function UpdateProductCard({
         />
 
         <UpdateCardLevels
-          startingUpdateLevel={startingUpdateLevel}
+          currentUpdateLevel={endingUpdateLevel}
           recommendedUpdateLevel={recommendedUpdateLevel}
           pendingLevels={pendingLevels}
         />
@@ -89,31 +80,9 @@ export function UpdateProductCard({
           pendingRegular={pendingRegular}
           pendingSecurity={pendingSecurity}
           totalPending={totalPending}
+          onInstalledClick={onInstalledClick}
+          onPendingClick={onPendingClick}
         />
-
-        {/* Progress Bar */}
-        <Box sx={{ mb: 2 }}>
-          <LinearProgress
-            variant="determinate"
-            value={percentage}
-            color={statusColor}
-            sx={{ height: 6, borderRadius: 1.5 }}
-          />
-        </Box>
-
-        {/* Action Button */}
-        <Button
-          fullWidth
-          variant="outlined"
-          color="warning"
-          startIcon={<FileText size={16} />}
-          onClick={onViewPendingUpdates}
-          sx={{
-            textTransform: "none",
-          }}
-        >
-          {formatViewPendingUpdatesButtonLabel(pendingLevels)}
-        </Button>
       </CardContent>
     </Card>
   );

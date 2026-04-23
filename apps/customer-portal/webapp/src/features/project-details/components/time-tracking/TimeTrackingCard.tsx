@@ -14,59 +14,46 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Card, Box, Typography, Chip, useTheme } from "@wso2/oxygen-ui";
+import { Card, Box, Typography, Chip, Divider, Stack } from "@wso2/oxygen-ui";
 import { type JSX } from "react";
-import {
-  formatMinutesAsHrMin,
-  getTimeCardStateColorPath,
-} from "@features/project-details/utils/projectDetails";
-import { getSupportOverviewChipSx, getPlainChipSx } from "@features/support/utils/support";
+import { formatMinutesAsHrMin } from "@features/project-details/utils/projectDetails";
+import { getPlainChipSx } from "@features/support/utils/support";
 import type { TimeTrackingCardProps } from "@features/project-details/types/projectDetailsComponents";
 
 /**
- * TimeTrackingCard displays a single time card with case label, state, billable, case number, total time, and approver.
+ * Displays a single case time card with case number, name, billable/non-billable breakdown and total time.
  *
- * @param {TimeTrackingCardProps} props - Time card data.
+ * @param {TimeTrackingCardProps} props - Case time card data.
  * @returns {JSX.Element} The rendered time card.
  */
 export default function TimeTrackingCard({
   card,
 }: TimeTrackingCardProps): JSX.Element {
-  const theme = useTheme();
-  const { case: caseData, state, hasBillable, totalTime, reportedBy } = card;
+  const { case: caseData, totalTime, billable } = card;
 
-  const label = caseData?.label?.trim() || "--";
   const caseNumber = caseData?.number?.trim() || "--";
-  const reportedByName = reportedBy?.label?.trim() || "--";
+  const caseName = caseData?.name?.trim() || "--";
 
   const totalTimeDisplay = formatMinutesAsHrMin(totalTime);
-
-  const stateColorPath = getTimeCardStateColorPath(state);
+  const billableDisplay = formatMinutesAsHrMin(billable.totalTime);
 
   return (
-    <Card
-      sx={{
-        p: "20px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "24px",
-      }}
-    >
+    <Card sx={{ p: "20px", display: "flex", flexDirection: "column", gap: 2 }}>
       <Box
         sx={{
           display: "flex",
           alignItems: "flex-start",
           justifyContent: "space-between",
-          mb: "12px",
+          gap: 2,
         }}
       >
-        <Box sx={{ flex: 1 }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
           <Box
             sx={{
               display: "flex",
               alignItems: "center",
-              gap: "8px",
-              mb: "8px",
+              gap: 1,
+              mb: 1,
               flexWrap: "wrap",
             }}
           >
@@ -76,43 +63,15 @@ export default function TimeTrackingCard({
               variant="outlined"
               sx={getPlainChipSx()}
             />
-            <Chip
-              label={state?.label || "--"}
-              size="small"
-              variant="outlined"
-              sx={getSupportOverviewChipSx(stateColorPath, theme)}
-            />
-            {hasBillable && (
-              <Chip
-                label="Billable"
-                size="small"
-                variant="outlined"
-                sx={getSupportOverviewChipSx("success.main", theme)}
-              />
-            )}
           </Box>
-          <Typography
-            variant="body2"
-            sx={{
-              mb: "8px",
-              color: "text.primary",
-              fontSize: "0.875rem",
-            }}
-          >
-            {label}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Reported by: {reportedByName}
+          <Typography variant="body2" color="text.primary" sx={{ mb: 0.5 }}>
+            {caseName}
           </Typography>
         </Box>
-        <Box sx={{ textAlign: "right" }}>
+        <Box sx={{ textAlign: "right", flexShrink: 0 }}>
           <Typography
             variant="h5"
-            sx={{
-              fontWeight: 400,
-              fontSize: "1.5rem",
-              color: "text.primary",
-            }}
+            sx={{ fontWeight: 400, fontSize: "1.5rem", color: "text.primary" }}
           >
             {totalTimeDisplay === "Not Available" ? "--" : totalTimeDisplay}
           </Typography>

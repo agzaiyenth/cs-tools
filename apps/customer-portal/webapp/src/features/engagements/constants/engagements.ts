@@ -15,7 +15,6 @@
 // under the License.
 
 import {
-  Briefcase,
   CircleAlert,
   CircleCheck,
   Clock,
@@ -41,20 +40,13 @@ export const ENGAGEMENTS_LIST_ENTITY_LABEL = "engagements";
 export const ENGAGEMENTS_STAT_GRID_ENTITY_NAME = "engagement statistics";
 
 /** Stat card labels (Engagements overview). */
-export const ENGAGEMENTS_STAT_LABEL_TOTAL = "Total Engagements";
-export const ENGAGEMENTS_STAT_LABEL_ACTIVE = "Active Engagements";
+export const ENGAGEMENTS_STAT_LABEL_ACTIVE = "Outstanding Engagements";
 export const ENGAGEMENTS_STAT_LABEL_COMPLETED = "Completed";
 export const ENGAGEMENTS_STAT_LABEL_ON_HOLD = "On Hold";
 
 /** Stat card layout for {@link EngagementsStatCards} (icons + keys + labels). */
 export const ENGAGEMENTS_STAT_CARDS_CONFIG: SupportStatConfig<EngagementsStatKey>[] =
   [
-    {
-      icon: Briefcase,
-      iconColor: "primary",
-      key: "total",
-      label: ENGAGEMENTS_STAT_LABEL_TOTAL,
-    },
     {
       icon: Clock,
       iconColor: "info",

@@ -20,13 +20,17 @@ import {
   formatProjectDateTime,
 } from "@features/project-details/utils/projectDetails";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
-  Card,
-  CardContent,
   Chip,
   Divider,
+  Tooltip,
   Typography,
+  colors,
 } from "@wso2/oxygen-ui";
+import { ChevronDown } from "@wso2/oxygen-ui-icons-react";
 import DeploymentCardLicenseFooter from "@features/project-details/components/deployments/deployment-card/DeploymentCardLicenseFooter";
 import DeploymentCardToolbar from "@features/project-details/components/deployments/deployment-card/DeploymentCardToolbar";
 import { useState, type JSX } from "react";
@@ -38,10 +42,11 @@ import { usePatchDeployment } from "@features/project-details/api/usePatchDeploy
 import { useDownloadDeploymentLicense } from "@features/project-details/api/useDownloadDeploymentLicense";
 
 /**
- * Renders a single deployment environment card with products and documents.
+ * Renders a deployment environment as a collapsible accordion.
+ * Summary shows name, number chip, type chip, and description; details show products, documents, and license.
  *
  * @param {DeploymentCardProps} props - Props containing the deployment data.
- * @returns {JSX.Element} The deployment card.
+ * @returns {JSX.Element} The deployment accordion card.
  */
 export default function DeploymentCard({
   deployment,
@@ -50,6 +55,7 @@ export default function DeploymentCard({
 }: DeploymentCardProps): JSX.Element {
   const { name, description, createdOn, updatedOn } = deployment;
   const projectId = deployment.project?.id ?? "";
+  const [expanded, setExpanded] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const patchDeployment = usePatchDeployment();
@@ -66,81 +72,111 @@ export default function DeploymentCard({
     });
   };
 
+  const typeLabel = deployment.type?.label;
+
   return (
-    <Card>
-      <CardContent
-        sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}
+    <>
+      <Accordion
+        expanded={expanded}
+        onChange={(_, isExpanded) => setExpanded(isExpanded)}
+        disableGutters
+        elevation={0}
+        sx={{
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: 1,
+          overflow: "hidden",
+          "&:before": { display: "none" },
+          "&.Mui-expanded": { margin: 0 },
+        }}
       >
-        <Box
+        <AccordionSummary
+          expandIcon={<ChevronDown size={20} color={colors.grey?.[500] ?? "#6B7280"} />}
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 3,
-            flex: 1,
+            px: 3,
+            py: 1.5,
+            "&:hover": { bgcolor: "action.hover" },
+            "& .MuiAccordionSummary-content": { m: 0, minWidth: 0 },
           }}
         >
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1.5,
-                mb: 0.5,
-                flexWrap: "wrap",
-              }}
-            >
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                {displayValue(name, "Not Available")}
-              </Typography>
+            {/* Row 1: name + number badge */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5, minWidth: 0 }}>
+              <Tooltip title={name || ""} disableHoverListener={!name}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontWeight: 600,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    minWidth: 0,
+                  }}
+                >
+                  {displayValue(name, "Not Available")}
+                </Typography>
+              </Tooltip>
               <Chip
                 label={displayValue(deployment.number, "Not Available")}
                 size="small"
                 variant="outlined"
-                sx={{ height: 20, fontSize: "0.75rem" }}
+                sx={{ height: 20, fontSize: "0.75rem", fontFamily: "monospace", flexShrink: 0 }}
               />
-              {deployment.type?.label && (
-                <Chip
-                  label={deployment.type.label}
-                  size="small"
-                  variant="outlined"
-                  sx={{ height: 20, fontSize: "0.75rem" }}
-                />
+            </Box>
+            {/* Row 2: type + bullet + description (wraps naturally) */}
+            <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.75, flexWrap: "wrap" }}>
+              {typeLabel && (
+                <Typography variant="caption" color="text.secondary" sx={{ textTransform: "capitalize", flexShrink: 0 }}>
+                  {typeLabel}
+                </Typography>
+              )}
+              {typeLabel && description && (
+                <Typography variant="caption" color="text.disabled" sx={{ flexShrink: 0 }}>•</Typography>
+              )}
+              {description && (
+                <Typography variant="caption" color="text.secondary" sx={{ wordBreak: "break-word" }}>
+                  {description}
+                </Typography>
               )}
             </Box>
           </Box>
-          <DeploymentCardToolbar
-            onEdit={() => setIsEditModalOpen(true)}
-            onDelete={() => setIsDeleteModalOpen(true)}
-            isDeleteDisabled={patchDeployment.isPending}
+        </AccordionSummary>
+
+        <AccordionDetails sx={{ px: 3, pb: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+          <Divider />
+
+          {/* Toolbar: edit + delete */}
+          <Box
+            sx={{ display: "flex", justifyContent: "flex-end" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <DeploymentCardToolbar
+              onEdit={() => setIsEditModalOpen(true)}
+              onDelete={() => setIsDeleteModalOpen(true)}
+              isDeleteDisabled={patchDeployment.isPending}
+            />
+          </Box>
+
+          <DeploymentProductList
+            deploymentId={deployment.id}
+            projectId={deployment.project?.id ?? ""}
+            selectedProduct={selectedProduct}
+            onToggleProductSelect={onToggleProductSelect}
           />
-        </Box>
 
-        <Divider />
-        <Typography variant="body2" color="text.secondary">
-          {displayValue(description, "Not Available")}
-        </Typography>
-        <Divider />
+          <Divider />
 
-        <DeploymentProductList
-          deploymentId={deployment.id}
-          projectId={deployment.project?.id ?? ""}
-          selectedProduct={selectedProduct}
-          onToggleProductSelect={onToggleProductSelect}
-        />
+          <DeploymentDocumentList deploymentId={deployment.id} />
 
-        <Divider />
-
-        <DeploymentDocumentList deploymentId={deployment.id} />
-
-        <Divider />
-        <DeploymentCardLicenseFooter
-          createdAtLabel={createdAtStr}
-          updatedAtLabel={updatedAtStr}
-          onDownloadLicense={handleDownloadLicense}
-          isDownloading={downloadLicense.isPending}
-        />
-      </CardContent>
+          <Divider />
+          <DeploymentCardLicenseFooter
+            createdAtLabel={createdAtStr}
+            updatedAtLabel={updatedAtStr}
+            onDownloadLicense={handleDownloadLicense}
+            isDownloading={downloadLicense.isPending}
+          />
+        </AccordionDetails>
+      </Accordion>
 
       <EditDeploymentModal
         open={isEditModalOpen}
@@ -168,6 +204,6 @@ export default function DeploymentCard({
           );
         }}
       />
-    </Card>
+    </>
   );
 }
