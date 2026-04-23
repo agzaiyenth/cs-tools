@@ -18,7 +18,6 @@ import type { JSX } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { Box, Button, Stack } from "@wso2/oxygen-ui";
 import { ArrowLeft } from "@wso2/oxygen-ui-icons-react";
-import EngagementsStatCards from "@features/engagements/components/EngagementsStatCards";
 import EngagementsListSection from "@features/engagements/components/EngagementsListSection";
 import { useEngagementsPageState } from "@features/engagements/hooks/useEngagementsPageState";
 
@@ -37,9 +36,6 @@ export default function EngagementsPage(): JSX.Element {
     excludeS0,
     restrictSeverityToLow,
     filterMetadata,
-    stats,
-    isStatsLoading,
-    isStatsError,
     searchTerm,
     isFiltersOpen,
     setIsFiltersOpen,
@@ -76,12 +72,6 @@ export default function EngagementsPage(): JSX.Element {
           </Button>
         </Box>
       )}
-      <EngagementsStatCards
-        stats={stats}
-        isLoading={isStatsLoading}
-        isError={isStatsError}
-      />
-
       <EngagementsListSection
         searchTerm={searchTerm}
         onSearchChange={handleSearchChange}
