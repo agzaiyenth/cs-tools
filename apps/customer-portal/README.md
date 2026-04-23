@@ -9,7 +9,7 @@ Customer Portal is an open-source solution for customer success operations, buil
 Customer Portal is delivered through two frontend experiences:
 
 - `webapp`: Publicly available browser-based customer portal
-- `microapp`: Micro app experience inside the [WSO2 mobile super app](https://github.com/opensuperapp/opensuperapp/tree/v1)
+- `microapp`: Micro app experience inside the [WSO2 super app](https://github.com/opensuperapp/opensuperapp/tree/v1)
 
 ## Why Customer Portal?
 
@@ -19,7 +19,7 @@ Customer Portal addresses this by combining:
 
 - A centralized backend service for business APIs and integrations,
 - A publicly available web application for end-user workflows,
-- A microapp experience in the WSO2 mobile super app.
+- A microapp experience in the WSO2 super app.
 
 This setup helps teams deliver consistent, scalable customer experiences without rebuilding shared infrastructure.
 
@@ -30,7 +30,7 @@ This setup helps teams deliver consistent, scalable customer experiences without
 - **Centralized API Layer**
   The Ballerina backend provides customer portal APIs and integration points for external systems.
 - **Dual Frontend Delivery**
-  The webapp targets public browser access, while the microapp targets in-app usage within the WSO2 mobile super app.
+  The webapp targets public browser access, while the microapp targets in-app usage within the WSO2 super app.
 - **Identity Integration**
   Authentication is integrated with Asgardeo/OIDC-compatible identity providers for secure access control.
 
@@ -41,7 +41,7 @@ This setup helps teams deliver consistent, scalable customer experiences without
 ├── backend                  # RESTful Ballerina backend service
 ├── webapp                   # Public React + TypeScript web application
 │   └── README.md            # Detailed webapp documentation
-├── microapp                 # React microapp available within WSO2 mobile super app
+├── microapp                 # React microapp available within WSO2 super app
 │   └── README.md            # Detailed microapp documentation
 └── README.md                # You're here
 ```
