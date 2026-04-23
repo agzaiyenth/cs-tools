@@ -47,6 +47,7 @@ const ChartLayout = ({
   showOperationsChart = true,
   operationsChartMode = OperationsChartMode.SrAndCr,
   showEngagementsChart = true,
+  onSeverityClick,
 }: ChartLayoutProps): JSX.Element => {
   const visibleChartsCount =
     1 + (showOperationsChart ? 1 : 0) + (showEngagementsChart ? 1 : 0);
@@ -68,6 +69,7 @@ const ChartLayout = ({
           excludeS0={excludeS0}
           restrictSeverityToLow={restrictSeverityToLow}
           centerContent={singleChartMode}
+          onSeverityClick={onSeverityClick}
         />
       </Grid>
 

@@ -60,6 +60,7 @@ export const OutstandingIncidentsChart = ({
   excludeS0 = false,
   restrictSeverityToLow = false,
   centerContent = false,
+  onSeverityClick,
 }: OutstandingIncidentsChartProps): JSX.Element => {
   const isDarkMode = useDarkMode();
   // safe data
@@ -168,6 +169,9 @@ export const OutstandingIncidentsChart = ({
             opacity: isError ? 0.3 : 1,
             filter: isError ? "grayscale(1)" : "none",
             "& *:focus": { outline: "none" },
+            ...(onSeverityClick && !isError && {
+              "& .recharts-pie-sector": { cursor: "pointer" },
+            }),
           }}
         >
           <ResponsiveContainer width="100%" height="100%">
@@ -189,6 +193,14 @@ export const OutstandingIncidentsChart = ({
                 endAngle={-270}
                 label={false}
                 labelLine={false}
+                onClick={
+                  onSeverityClick && !isError
+                    ? (_data, index) => {
+                        const entry = chartData[index];
+                        if (entry?.id) onSeverityClick(entry.id);
+                      }
+                    : undefined
+                }
               >
                 {chartData.map((entry, index) => (
                   <Cell
@@ -268,7 +280,7 @@ export const OutstandingIncidentsChart = ({
               : undefined
           }
         >
-          <ChartLegend data={displayLegendData} isError={isError} showValues />
+          <ChartLegend data={displayLegendData} isError={isError} showValues onItemClick={onSeverityClick} />
         </Box>
       )}
     </Card>
