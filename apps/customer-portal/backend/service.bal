@@ -2989,20 +2989,29 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
         if reqLimit > 50 {
             int reqOffset = payload.pagination?.offset ?: 0;
 
-            // Cache key is derived from the server-side filter fields so that different
-            // filter combinations get independent cache entries.
+            // Cache key covers all filter and sort dimensions so distinct queries
+            // never share a cache entry.
             string cacheKey = string `sq=${payload.filters?.searchQuery ?: ""},` +
                 string `sv=${payload.filters?.severityId ?: ""},` +
-                string `st=${payload.filters?.statusId ?: ""}`;
+                string `st=${payload.filters?.statusId ?: ""},` +
+                string `pn=${payload.filters?.productName ?: ""},` +
+                string `pv=${payload.filters?.productVersion ?: ""},` +
+                string `sb=${payload.sortBy?.'field ?: ""}-${payload.sortBy?.'order ?: ""}`;
 
             // Return cached result if available (TTL: 12 hours).
             any|cache:Error cachedEntry = productVulnerabilityCache.get(cacheKey);
             if cachedEntry is types:ProductVulnerability[] {
                 log:printDebug(string `[vulnerabilities] Cache hit for key: ${cacheKey}`);
+                int totalCached = cachedEntry.length();
+                types:ProductVulnerability[] cachedPage = reqOffset >= totalCached
+                    ? []
+                    : (reqOffset + reqLimit >= totalCached
+                        ? cachedEntry.slice(reqOffset)
+                        : cachedEntry.slice(reqOffset, reqOffset + reqLimit));
                 return <http:Ok>{
                     body: <types:ProductVulnerabilitySearchResponse>{
-                        productVulnerabilities: cachedEntry,
-                        totalRecords: cachedEntry.length(),
+                        productVulnerabilities: cachedPage,
+                        totalRecords: totalCached,
                         'limit: reqLimit,
                         offset: reqOffset
                     }
@@ -3081,16 +3090,23 @@ service http:InterceptableService / on new http:Listener(9090, listenerConf) {
                 }
             }
 
-            // Store aggregated results in cache for 12 hours.
+            // Store the full aggregated set in cache for 12 hours.
             cache:Error? putErr = productVulnerabilityCache.put(cacheKey, allVulnerabilities);
             if putErr is cache:Error {
                 log:printWarn("Failed to store product vulnerabilities in cache.", putErr);
             }
 
+            int totalAll = allVulnerabilities.length();
+            types:ProductVulnerability[] responsePage = reqOffset >= totalAll
+                ? []
+                : (reqOffset + reqLimit >= totalAll
+                    ? allVulnerabilities.slice(reqOffset)
+                    : allVulnerabilities.slice(reqOffset, reqOffset + reqLimit));
+
             return <http:Ok>{
                 body: <types:ProductVulnerabilitySearchResponse>{
-                    productVulnerabilities: allVulnerabilities,
-                    totalRecords: allVulnerabilities.length(),
+                    productVulnerabilities: responsePage,
+                    totalRecords: totalAll,
                     'limit: reqLimit,
                     offset: reqOffset
                 }

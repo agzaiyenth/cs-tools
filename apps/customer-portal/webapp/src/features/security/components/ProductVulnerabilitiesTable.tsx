@@ -152,12 +152,24 @@ const ProductVulnerabilitiesTable = ({
     };
   }, [filteredVulnerabilities, page, rowsPerPage]);
 
+  // Clamp the current page when the filtered dataset shrinks (e.g. after a
+  // filter change) so the table never shows an empty page while valid rows exist.
+  useEffect(() => {
+    const maxPage = Math.max(
+      Math.ceil(filteredVulnerabilities.length / rowsPerPage) - 1,
+      0,
+    );
+    if (page > maxPage) {
+      setPage(maxPage);
+    }
+  }, [filteredVulnerabilities.length, rowsPerPage, page]);
+
   useEffect(() => {
     onTotalRecordsChange?.(paginatedData.totalRecords);
   }, [paginatedData.totalRecords, onTotalRecordsChange]);
 
   useEffect(() => {
-    if (isError) onError?.(true);
+    onError?.(isError);
   }, [isError, onError]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
