@@ -75,6 +75,7 @@ import {
   getOperationsNavSegment,
 } from "@features/operations/utils/operationsPages";
 import { resolveCasesTableDefaultStatusIds } from "@features/dashboard/utils/casesTable";
+import { CaseStatus } from "@features/support/constants/supportConstants";
 
 /**
  * ServiceRequestsPage lists service requests using the same filters, sort,
@@ -140,15 +141,21 @@ export default function ServiceRequestsPage(): JSX.Element {
 
   const outstandingStatusIds = useMemo(() => {
     if (actionRequired) {
-      return (filterMetadata?.caseStates ?? [])
-        .filter((s) => s.label === "Awaiting Info" || s.label === "Solution Proposed")
+      if (!filterMetadata) return undefined;
+      return (filterMetadata.caseStates ?? [])
+        .filter(
+          (s) =>
+            s.label === CaseStatus.AWAITING_INFO ||
+            s.label === CaseStatus.SOLUTION_PROPOSED,
+        )
         .map((s) => Number(s.id));
     }
     if (outstandingOnly) {
-      return resolveCasesTableDefaultStatusIds(filterMetadata?.caseStates);
+      if (!filterMetadata) return undefined;
+      return resolveCasesTableDefaultStatusIds(filterMetadata.caseStates);
     }
     return [];
-  }, [actionRequired, outstandingOnly, filterMetadata?.caseStates]);
+  }, [actionRequired, outstandingOnly, filterMetadata]);
 
   const caseSearchRequest = useMemo(
     () =>
@@ -171,7 +178,10 @@ export default function ServiceRequestsPage(): JSX.Element {
     fetchNextPage,
     isFetchingNextPage,
   } = useGetProjectCases(projectId || "", caseSearchRequest, {
-    enabled: !!projectId && permissions.hasSR,
+    enabled:
+      !!projectId &&
+      permissions.hasSR &&
+      (!(actionRequired || outstandingOnly) || filterMetadata !== undefined),
     pageSize: rowsPerPage,
   });
 
