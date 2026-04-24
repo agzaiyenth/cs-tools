@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, IconButton } from "@wso2/oxygen-ui";
+import { Box, IconButton, Skeleton } from "@wso2/oxygen-ui";
 import type { JSX } from "react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
@@ -63,7 +63,7 @@ export default function UsageAndMetricsTabContent(): JSX.Element {
     [timeRange],
   );
 
-  const { data: deploymentsData } = usePostProjectDeploymentsSearchAll(
+  const { data: deploymentsData, isLoading: isDeploymentsLoading } = usePostProjectDeploymentsSearchAll(
     projectId ?? "",
   );
 
@@ -211,50 +211,62 @@ export default function UsageAndMetricsTabContent(): JSX.Element {
               display: "flex",
               alignItems: "center",
               gap: 0,
-              maxWidth: { xs: "72%", md: "78%" },
+              maxWidth: { xs: "68%", md: "74%" },
+              overflow: "hidden",
             }}
           >
-            {deploymentTabs.length > 0 && (
-              <IconButton
-                size="small"
-                onClick={() => handleScrollDeploymentTabs("left")}
-                aria-label="Scroll deployment tabs left"
-                sx={{ flexShrink: 0 }}
-              >
-                <ChevronLeft size={16} />
-              </IconButton>
-            )}
-            <Box
-              ref={deploymentTabsScrollRef}
-              sx={{
-                flex: 1,
-                minWidth: 0,
-                overflowX: "auto",
-                overflowY: "hidden",
-                scrollbarWidth: "none",
-                "&::-webkit-scrollbar": { display: "none" },
-              }}
-            >
-              <Box sx={{ width: "max-content", minWidth: "100%" }}>
-                <TabBar
-                  tabs={deploymentTabs}
-                  activeTab={innerTab}
-                  onTabChange={setInnerTab}
-                  keepButtonWidth={true}
-                  compact={true}
-                  sx={{ mb: 0, border: "none", boxShadow: "none" }}
-                />
+            {isDeploymentsLoading ? (
+              <Box sx={{ display: "flex", gap: 1, flex: 1, minWidth: 0, px: 0.5 }}>
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} variant="rounded" width={120} height={36} />
+                ))}
               </Box>
-            </Box>
-            {deploymentTabs.length > 0 && (
-              <IconButton
-                size="small"
-                onClick={() => handleScrollDeploymentTabs("right")}
-                aria-label="Scroll deployment tabs right"
-                sx={{ flexShrink: 0 }}
-              >
-                <ChevronRight size={16} />
-              </IconButton>
+            ) : (
+              <>
+                {deploymentTabs.length > 0 && (
+                  <IconButton
+                    size="small"
+                    onClick={() => handleScrollDeploymentTabs("left")}
+                    aria-label="Scroll deployment tabs left"
+                    sx={{ flexShrink: 0 }}
+                  >
+                    <ChevronLeft size={16} />
+                  </IconButton>
+                )}
+                <Box
+                  ref={deploymentTabsScrollRef}
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    maxWidth: "100%",
+                    overflowX: "auto",
+                    overflowY: "hidden",
+                    scrollbarWidth: "none",
+                    "&::-webkit-scrollbar": { display: "none" },
+                  }}
+                >
+                  <Box sx={{ width: "max-content", maxWidth: "100%" }}>
+                    <TabBar
+                      tabs={deploymentTabs}
+                      activeTab={innerTab}
+                      onTabChange={setInnerTab}
+                      keepButtonWidth={true}
+                      compact={true}
+                      sx={{ mb: 0, border: "none", boxShadow: "none" }}
+                    />
+                  </Box>
+                </Box>
+                {deploymentTabs.length > 0 && (
+                  <IconButton
+                    size="small"
+                    onClick={() => handleScrollDeploymentTabs("right")}
+                    aria-label="Scroll deployment tabs right"
+                    sx={{ flexShrink: 0 }}
+                  >
+                    <ChevronRight size={16} />
+                  </IconButton>
+                )}
+              </>
             )}
           </Box>
         </Box>

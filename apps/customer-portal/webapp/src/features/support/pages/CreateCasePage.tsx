@@ -557,19 +557,28 @@ export default function CreateCasePage(): JSX.Element {
     if (!projectDeployments?.length) return;
     if (hasRelatedCaseDeploymentInitializedRef.current) return;
 
-    const dep = relatedCase.deploymentId
-      ? projectDeployments.find(
-          (d: ProjectDeploymentItem) => d.id === relatedCase.deploymentId,
+    const deploymentOptionFromId = relatedCase.deploymentId
+      ? projectDeployments
+          .find((d: ProjectDeploymentItem) => d.id === relatedCase.deploymentId)
+          ?.name?.trim() ||
+        projectDeployments
+          .find((d: ProjectDeploymentItem) => d.id === relatedCase.deploymentId)
+          ?.type?.label?.trim()
+      : undefined;
+    const deploymentOptionFromLabel = relatedCase.deploymentLabel
+      ? findMatchingDeploymentLabel(
+          relatedCase.deploymentLabel,
+          baseDeploymentOptions,
         )
-      : null;
-    const displayLabel = dep
-      ? (dep.name ?? dep.type?.label ?? relatedCase.deploymentLabel)
-      : relatedCase.deploymentLabel;
-    if (displayLabel) {
-      setDeployment(displayLabel);
+      : undefined;
+    const resolvedDeploymentOption =
+      deploymentOptionFromId || deploymentOptionFromLabel;
+
+    if (resolvedDeploymentOption) {
+      setDeployment(resolvedDeploymentOption);
       hasRelatedCaseDeploymentInitializedRef.current = true;
     }
-  }, [relatedCase, projectDeployments]);
+  }, [relatedCase, projectDeployments, baseDeploymentOptions]);
 
   useEffect(() => {
     if (noAiMode) return;
