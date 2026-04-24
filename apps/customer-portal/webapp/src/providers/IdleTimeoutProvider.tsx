@@ -24,6 +24,7 @@ import {
   IDLE_THROTTLE_MS,
 } from "@constants/authConstants";
 import { clearUserPreferredTimeZone } from "@utils/dateTime";
+import { useLogger } from "@/hooks/useLogger";
 
 interface IdleTimeoutProviderProps {
   children: ReactNode;
@@ -41,6 +42,7 @@ export default function IdleTimeoutProvider({
 }: IdleTimeoutProviderProps): JSX.Element {
   const [sessionWarningOpen, setSessionWarningOpen] = useState(false);
   const { signOut, isSignedIn, isLoading } = useAsgardeo();
+  const logger = useLogger();
 
   const onPrompt = () => {
     if (isSignedIn && !isLoading) {
@@ -67,7 +69,7 @@ export default function IdleTimeoutProvider({
     try {
       await signOut();
     } catch {
-      // signOut redirects the browser; errors here are non-recoverable
+      logger.error("Error signing out");
     }
   };
 

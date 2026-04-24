@@ -44,8 +44,6 @@ export default function UserProfile(): JSX.Element {
       await signOut();
     } catch (error) {
       logger.error("Failed to sign out", error);
-    } finally {
-      navigate("/");
     }
   };
 
