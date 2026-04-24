@@ -19,7 +19,6 @@ import {
   BookOpen,
   Bot,
   Calendar,
-  CalendarDays,
   CircleAlert,
   CircleCheck,
   CirclePause,
@@ -33,11 +32,11 @@ import {
   MessageSquare,
   Paperclip,
   Phone,
-  Server,
   TriangleAlert,
   RotateCcw,
   XCircle,
   FileCheck,
+  AlertCircle,
 } from "@wso2/oxygen-ui-icons-react";
 import type { ProjectCasesStats } from "@features/support/types/cases";
 import type {
@@ -569,13 +568,13 @@ export type OperationsStatKey =
  */
 export const OPERATIONS_STAT_CONFIGS: SupportStatConfig<OperationsStatKey>[] = [
   {
-    icon: Server,
+    icon: AlertCircle,
     iconColor: "info",
     key: "actionRequiredServiceRequests",
     label: "Action Required Service Requests",
   },
   {
-    icon: CalendarDays,
+    icon: Clock,
     iconColor: "primary",
     key: "outstandingServiceRequests",
     label: "Outstanding Service Requests",
