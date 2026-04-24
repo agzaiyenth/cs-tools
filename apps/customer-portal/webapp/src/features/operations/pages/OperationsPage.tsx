@@ -153,7 +153,7 @@ export default function OperationsPage(): JSX.Element {
     () =>
       changeRequests.map((cr) => ({
         id: cr.id,
-        internalId: cr.id,
+        internalId: cr.internalId ?? undefined,
         number: cr.number,
         title: cr.title,
         description: cr.description ?? "",
@@ -437,6 +437,7 @@ export default function OperationsPage(): JSX.Element {
                         isLoading={isCrLoading}
                         isError={isCrError}
                         useChangeRequestColors
+                        showInternalId
                         onCaseClick={
                           projectId
                             ? (c) =>

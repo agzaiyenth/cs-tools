@@ -216,6 +216,20 @@ export default function ChangeRequestsList({
                   flexWrap: "wrap",
                 }}
               >
+                {item.internalId && (
+                  <>
+                    <Typography
+                      variant="body2"
+                      fontWeight={500}
+                      color="text.secondary"
+                    >
+                      {item.internalId}
+                    </Typography>
+                    <Typography variant="body2" color="text.disabled">
+                      |
+                    </Typography>
+                  </>
+                )}
                 <Typography
                   variant="body2"
                   fontWeight={500}
