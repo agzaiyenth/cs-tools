@@ -69,6 +69,7 @@ export default function CaseDetailsContent({
 }: CaseDetailsContentProps): JSX.Element {
   const theme = useTheme();
   const location = useLocation();
+  const hasReturnTo = !!(location.state as { returnTo?: string } | null)?.returnTo;
   const [activeTab, setActiveTab] = useState(0);
   const [focusMode, setFocusMode] = useState(false);
 
@@ -150,6 +151,8 @@ export default function CaseDetailsContent({
   const hideCallsTab = isSecurityReportAnalysis || !isCallSchedulingAllowed;
   const hideKnowledgeBaseTab =
     isSecurityReportAnalysis || isEngagementRoute || isServiceRequest;
+  const hideRelatedChangeRequestsTab =
+    !isServiceRequest || !data?.changeRequests?.length;
 
   // Eagerly fetch KB recommendations so the tab count is available on page load.
   // React Query deduplicates the network call when the KB tab component mounts later.
@@ -176,8 +179,9 @@ export default function CaseDetailsContent({
       2,
       ...(hideCallsTab ? [] : [3]),
       ...(hideKnowledgeBaseTab ? [] : [4]),
+      ...(hideRelatedChangeRequestsTab ? [] : [5]),
     ],
-    [hideCallsTab, hideKnowledgeBaseTab],
+    [hideCallsTab, hideKnowledgeBaseTab, hideRelatedChangeRequestsTab],
   );
   const clampedActiveTab = Math.min(
     activeTab,
@@ -205,10 +209,12 @@ export default function CaseDetailsContent({
     return (
       <Box>
         <Paper variant="outlined" sx={{ p: 2 }}>
-          <CaseDetailsBackButton
-            onClick={onBack}
-            sx={{ mb: 2, ml: -0.5, alignSelf: "flex-start" }}
-          />
+          {hasReturnTo && (
+            <CaseDetailsBackButton
+              onClick={onBack}
+              sx={{ mb: 2, ml: -0.5, alignSelf: "flex-start" }}
+            />
+          )}
           <CaseDetailsSkeleton
             hideActionRow={hideActionRow}
             showEngineerOnly={showEngineerOnly}
@@ -240,14 +246,16 @@ export default function CaseDetailsContent({
           borderRadius: 0,
         }}
       >
-        <CaseDetailsBackButton
-          onClick={onBack}
-          sx={{
-            ml: focusMode ? 2 : -0.5,
-            mt: focusMode ? 2 : 0,
-            alignSelf: "flex-start",
-          }}
-        />
+        {hasReturnTo && (
+          <CaseDetailsBackButton
+            onClick={onBack}
+            sx={{
+              ml: focusMode ? 2 : -0.5,
+              mt: focusMode ? 2 : 0,
+              alignSelf: "flex-start",
+            }}
+          />
+        )}
 
         {isError ? (
           <Box
@@ -341,6 +349,7 @@ export default function CaseDetailsContent({
           hideKnowledgeBaseTab={hideKnowledgeBaseTab}
           knowledgeBaseCount={knowledgeBaseCount}
           knowledgeBaseCountLoading={knowledgeBaseCountLoading}
+          hideRelatedChangeRequestsTab={hideRelatedChangeRequestsTab}
         />
       </Paper>
 
