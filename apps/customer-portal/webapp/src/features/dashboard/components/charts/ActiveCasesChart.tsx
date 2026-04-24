@@ -150,11 +150,10 @@ export const ActiveCasesChart = ({
               "& *:focus": { outline: "none" },
               ...(onSliceClick && !isError && {
                 "& .recharts-pie-sector": { cursor: "pointer" },
-                cursor: "pointer",
-                transition: "box-shadow 0.2s ease, transform 0.15s ease",
-                "&:hover": {
-                  boxShadow: `0 0 0 1px ${theme.palette.primary.main}, 0 4px 16px rgba(0,0,0,0.12)`,
-                  transform: "translateY(-2px)",
+                "& .recharts-pie-sector:hover path": {
+                  stroke: theme.palette.primary.main,
+                  strokeWidth: 2,
+                  filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.18))",
                 },
               }),
             }}
