@@ -22,7 +22,7 @@ import {
   Cell,
   ResponsiveContainer,
 } from "@wso2/oxygen-ui-charts-react";
-import { useMemo, type JSX } from "react";
+import { useMemo, useState, type JSX } from "react";
 import { ChartLegend } from "@features/dashboard/components/charts/ChartLegend";
 import { OUTSTANDING_ENGAGEMENTS_CATEGORY_CHART_DATA } from "@/features/dashboard/constants/dashboard";
 import {
@@ -61,8 +61,10 @@ export const CasesTrendChart = ({
   isLoading,
   isError,
   centerContent = false,
+  onSliceClick,
 }: CasesTrendChartProps): JSX.Element => {
   const isDarkMode = useDarkMode();
+  const [activePieIndex, setActivePieIndex] = useState<number | undefined>(undefined);
   // safe data
   const safeData = data ?? EMPTY_CASES_TREND_DATA;
   // error grey
@@ -186,7 +188,7 @@ export const CasesTrendChart = ({
           <Box sx={{ width: 52, height: 52, borderRadius: "50%", bgcolor: alpha(colors.grey?.[500] ?? "#6B7280", 0.08), display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Inbox size={24} color={colors.grey?.[400] ?? "#9CA3AF"} />
           </Box>
-          <Typography variant="body2" color="text.disabled">No data found</Typography>
+          <Typography variant="body2" color="text.disabled">No {DASHBOARD_CHART_TITLE_OUTSTANDING_ENGAGEMENTS} found</Typography>
         </Box>
       ) : (
         <>
@@ -197,6 +199,9 @@ export const CasesTrendChart = ({
               opacity: isError ? 0.3 : 1,
               filter: isError ? "grayscale(1)" : "none",
               "& *:focus": { outline: "none" },
+              ...(onSliceClick && !isError && {
+                "& .recharts-pie-sector": { cursor: "pointer" },
+              }),
             }}
           >
             <ResponsiveContainer width="100%" height="100%">
@@ -218,12 +223,27 @@ export const CasesTrendChart = ({
                   endAngle={-270}
                   label={false}
                   labelLine={false}
+                  onMouseEnter={
+                    onSliceClick && !isError
+                      ? (_data: unknown, index: number) => setActivePieIndex(index)
+                      : undefined
+                  }
+                  onMouseLeave={onSliceClick && !isError ? () => setActivePieIndex(undefined) : undefined}
+                  onClick={
+                    onSliceClick && !isError
+                      ? (_data: unknown, index: number) => {
+                          const id = displayChartData[index]?.id ?? displayChartData[index]?.name;
+                          if (id) onSliceClick(String(id));
+                        }
+                      : undefined
+                  }
                 >
                   {displayChartData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={entry.color}
-                      stroke="none"
+                      stroke={activePieIndex === index ? entry.color : "none"}
+                      strokeWidth={activePieIndex === index ? 3 : 0}
                       opacity={isDarkMode ? DASHBOARD_CHART_DARK_MODE_OPACITY : 1}
                     />
                   ))}
@@ -269,6 +289,7 @@ export const CasesTrendChart = ({
               }))}
               isError={isError}
               showValues
+              onItemClick={onSliceClick && !isError ? onSliceClick : undefined}
             />
           </Box>
         </>
