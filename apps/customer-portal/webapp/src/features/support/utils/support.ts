@@ -985,7 +985,7 @@ export function getStatusColor(label?: string): string {
     case CaseStatus.WAITING_ON_WSO2:
       return colors.yellow[800];
     case CaseStatus.SOLUTION_PROPOSED:
-      return colors.purple[900];
+      return colors.purple[300];
     case CaseStatus.CLOSED:
       return colors.grey[500];
     case CaseStatus.REOPENED:
