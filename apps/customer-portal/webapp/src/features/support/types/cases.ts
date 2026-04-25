@@ -249,6 +249,7 @@ export type CaseComment = AuditMetadata & {
   downloadUrl?: string;
   createdByFirstName?: string | null;
   createdByLastName?: string | null;
+  createdByFullName?: string | null;
   isEscalated: boolean;
   hasInlineAttachments?: boolean;
   inlineAttachments?: CaseCommentInlineAttachment[];
