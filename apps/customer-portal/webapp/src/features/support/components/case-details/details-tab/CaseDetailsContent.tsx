@@ -150,25 +150,38 @@ export default function CaseDetailsContent({
   const hideCallsTab = isSecurityReportAnalysis || !isCallSchedulingAllowed;
   const hideKnowledgeBaseTab =
     isSecurityReportAnalysis || isEngagementRoute || isServiceRequest;
-  const hideRelatedChangeRequestsTab = !isServiceRequest || !(data?.changeRequests?.length);
+  const hideRelatedChangeRequestsTab =
+    !isServiceRequest || !data?.changeRequests?.length;
 
   // Eagerly fetch KB recommendations so the tab count is available on page load.
   // React Query deduplicates the network call when the KB tab component mounts later.
-  const { data: kbCommentsData, isLoading: isKbCommentsLoading } = useGetCaseComments(
-    hideKnowledgeBaseTab ? "" : resolvedProjectId,
-    hideKnowledgeBaseTab ? "" : caseId,
-    { offset: 0 },
-  );
+  const { data: kbCommentsData, isLoading: isKbCommentsLoading } =
+    useGetCaseComments(
+      hideKnowledgeBaseTab ? "" : resolvedProjectId,
+      hideKnowledgeBaseTab ? "" : caseId,
+      { offset: 0 },
+    );
   const kbPayload = useMemo(
-    () => (hideKnowledgeBaseTab ? null : buildRecommendationRequestFromCase(data, kbCommentsData?.comments ?? [])),
+    () =>
+      hideKnowledgeBaseTab
+        ? null
+        : buildRecommendationRequestFromCase(
+            data,
+            kbCommentsData?.comments ?? [],
+          ),
     [hideKnowledgeBaseTab, data, kbCommentsData],
   );
-  const { data: kbRecData, isLoading: isKbRecLoading } = useConversationRecommendationsSearch(
-    kbPayload,
-    !hideKnowledgeBaseTab && !isKbCommentsLoading && !!kbPayload,
-  );
-  const knowledgeBaseCount = kbRecData ? (kbRecData.recommendations?.length ?? 0) : undefined;
-  const knowledgeBaseCountLoading = !hideKnowledgeBaseTab && (isKbCommentsLoading || (!!kbPayload && isKbRecLoading && !kbRecData));
+  const { data: kbRecData, isLoading: isKbRecLoading } =
+    useConversationRecommendationsSearch(
+      kbPayload,
+      !hideKnowledgeBaseTab && !isKbCommentsLoading && !!kbPayload,
+    );
+  const knowledgeBaseCount = kbRecData
+    ? (kbRecData.recommendations?.length ?? 0)
+    : undefined;
+  const knowledgeBaseCountLoading =
+    !hideKnowledgeBaseTab &&
+    (isKbCommentsLoading || (!!kbPayload && isKbRecLoading && !kbRecData));
 
   const visibleTabs = useMemo(
     () => [
@@ -293,7 +306,7 @@ export default function CaseDetailsContent({
               >
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <CaseDetailsHeader
-                    wso2CaseId={isServiceRequest ? data?.internalId : undefined}
+                    wso2CaseId={data?.internalId}
                     caseNumber={data?.number}
                     title={data?.title}
                     severityLabel={severityLabel ?? undefined}

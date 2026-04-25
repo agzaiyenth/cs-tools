@@ -22,7 +22,7 @@ import {
   Cell,
   ResponsiveContainer,
 } from "@wso2/oxygen-ui-charts-react";
-import { useMemo, type JSX } from "react";
+import { useMemo, useState, type JSX } from "react";
 import { ChartLegend } from "@features/dashboard/components/charts/ChartLegend";
 import { OUTSTANDING_ENGAGEMENTS_CATEGORY_CHART_DATA } from "@/features/dashboard/constants/dashboard";
 import {
@@ -61,8 +61,10 @@ export const CasesTrendChart = ({
   isLoading,
   isError,
   centerContent = false,
+  onSliceClick,
 }: CasesTrendChartProps): JSX.Element => {
   const isDarkMode = useDarkMode();
+  const [activePieIndex, setActivePieIndex] = useState<number | undefined>(undefined);
   // safe data
   const safeData = data ?? EMPTY_CASES_TREND_DATA;
   // error grey
@@ -81,6 +83,12 @@ export const CasesTrendChart = ({
     () =>
       new Map<string, string>([
         [
+          normalizeCategory("consultancy"),
+          colors.green?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
+            colors.green?.[300] ??
+            "#86EFAC",
+        ],
+        [
           normalizeCategory("onboarding"),
           colors.blue?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
             colors.blue?.[300] ??
@@ -93,22 +101,10 @@ export const CasesTrendChart = ({
             "#FDBA74",
         ],
         [
-          normalizeCategory("services"),
-          colors.green?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
-            colors.green?.[300] ??
-            "#86EFAC",
-        ],
-        [
-          normalizeCategory("follow-up"),
+          normalizeCategory("follow up"),
           colors.purple?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
             colors.purple?.[300] ??
-            "#D8B4FE",
-        ],
-        [
-          normalizeCategory("improvements"),
-          colors.brown?.[DASHBOARD_CHART_DARK_MODE_SHADE] ??
-            colors.brown?.[300] ??
-            "#D6BFA8",
+            "#C4B5FD",
         ],
       ]),
     [],
@@ -186,7 +182,7 @@ export const CasesTrendChart = ({
           <Box sx={{ width: 52, height: 52, borderRadius: "50%", bgcolor: alpha(colors.grey?.[500] ?? "#6B7280", 0.08), display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Inbox size={24} color={colors.grey?.[400] ?? "#9CA3AF"} />
           </Box>
-          <Typography variant="body2" color="text.disabled">No data found</Typography>
+          <Typography variant="body2" color="text.disabled">No {DASHBOARD_CHART_TITLE_OUTSTANDING_ENGAGEMENTS} found</Typography>
         </Box>
       ) : (
         <>
@@ -197,6 +193,9 @@ export const CasesTrendChart = ({
               opacity: isError ? 0.3 : 1,
               filter: isError ? "grayscale(1)" : "none",
               "& *:focus": { outline: "none" },
+              ...(onSliceClick && !isError && {
+                "& .recharts-pie-sector": { cursor: "pointer" },
+              }),
             }}
           >
             <ResponsiveContainer width="100%" height="100%">
@@ -205,7 +204,7 @@ export const CasesTrendChart = ({
                 tooltip={{ show: !isError, wrapperStyle: { zIndex: 1000 } }}
               >
                 <Pie
-                  data={displayChartData}
+                  data={displayChartData.filter((d) => d.value > 0)}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -218,12 +217,28 @@ export const CasesTrendChart = ({
                   endAngle={-270}
                   label={false}
                   labelLine={false}
+                  onMouseEnter={
+                    onSliceClick && !isError
+                      ? (_data: unknown, index: number) => setActivePieIndex(index)
+                      : undefined
+                  }
+                  onMouseLeave={onSliceClick && !isError ? () => setActivePieIndex(undefined) : undefined}
+                  onClick={
+                    onSliceClick && !isError
+                      ? (data: { name?: string; ids?: string[]; id?: string } | unknown) => {
+                          const entry = data as { name?: string; ids?: string[]; id?: string };
+                          const id = entry?.ids?.join(",") ?? entry?.id ?? entry?.name;
+                          if (id) onSliceClick(String(id));
+                        }
+                      : undefined
+                  }
                 >
-                  {displayChartData.map((entry, index) => (
+                  {displayChartData.filter((d) => d.value > 0).map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={entry.color}
-                      stroke="none"
+                      stroke={activePieIndex === index ? entry.color : "none"}
+                      strokeWidth={activePieIndex === index ? 3 : 0}
                       opacity={isDarkMode ? DASHBOARD_CHART_DARK_MODE_OPACITY : 1}
                     />
                   ))}
@@ -265,10 +280,11 @@ export const CasesTrendChart = ({
                 name: item.name,
                 value: item.value,
                 color: item.color,
-                id: item.id ?? item.name,
+                id: item.ids?.join(",") ?? item.id ?? item.name,
               }))}
               isError={isError}
               showValues
+              onItemClick={onSliceClick && !isError ? onSliceClick : undefined}
             />
           </Box>
         </>
